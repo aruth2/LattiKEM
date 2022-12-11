@@ -1,0 +1,17 @@
+dir = ./test_run/
+numSteps = 50
+biasTurnOn = 00
+biasTurnOff = 45
+numExcitations = 5
+sizex = 6
+sizey = 6
+sizez = 6
+coordinationNumber = 3
+numRuns = 4
+vacancyRatio = 0.01
+iodineRatio = 0.5
+hardcodedMaxThreads = 8
+job = restart
+thermalDistribution = fermi
+numOpticsEnergies = 200
+saveDefaults = 1

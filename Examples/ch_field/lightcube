@@ -1,0 +1,17 @@
+stepsPerSwitch = 1000
+stepDelay = 000
+numSteps = 5000
+sizex = 6
+sizey = 4
+sizez = 6
+freeElectronDensity = 1e-03
+freeHoleDensity = 1e-03
+dielectricConstant = 10
+modulation = 4
+offset = -2
+FAVacancyRatio = 0.12
+IVacancyRatio = 0.04
+dir = /data/PMCruns/lightcube/
+job = restart
+saveLightCube = 1
+lightCubeFrameStride = 1
