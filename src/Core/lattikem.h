@@ -1,5 +1,5 @@
-#ifndef _PMC_H_
-#define _PMC_H_
+#ifndef _LATTIKEM_H_
+#define _LATTIKEM_H_
 
 #include "pkmc.h"
 #include "perovskite.h"
@@ -20,5 +20,6 @@ void simulateTrajectories();
 void stepAverage(Trajectory *trajectories);
 void timeAverage(Trajectory *trajectories);
 void postProcess(Trajectory *trajectories);
-void pmc_registerSettings();
+void lattikem_registerSettings();
+void lattikem_startupMessage();
 #endif

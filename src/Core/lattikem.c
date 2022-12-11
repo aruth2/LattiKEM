@@ -19,7 +19,7 @@ int equivocationMethod;
 //int lightCubeFrameRepeat;
 //int lightCubeFrameStride;
 
-void pmc_startupMessage()
+void lattikem_startupMessage()
 {
 	char *message = 
 	"  _                                                   _     _               ____        ____                                     \n"
@@ -42,9 +42,9 @@ void pmc_startupMessage()
 	printf(message);
 }
 
-void pmc_registerSettings()
+void lattikem_registerSettings()
 {
-	pmc_startupMessage();
+	lattikem_startupMessage();
 	
     registerString(dir,"dir",".");
 	registerInt(&numRuns,"numRuns",1);

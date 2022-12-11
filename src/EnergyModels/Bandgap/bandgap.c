@@ -411,7 +411,7 @@ double bg_energy(Configuration *config)
 
 void bg_registerSettings()
 {
-	pmc_registerSettings();
+	lattikem_registerSettings();
 	registerDouble(&temperature,"temperature",0.025);
 	registerDouble(&numExcitations,"numExcitations",10);
 	registerDouble(&numExcitationsSecondStep,"numExcitationsSecondStep",0);
