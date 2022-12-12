@@ -75,7 +75,7 @@ void sourceControl_RegisterSettings()
 	registerInt(&potentialStepDelay,"potentialStepDelay",0);
 	registerEnum(2,&controlMode,"controlMode",VOLTAGE_CONTROL,"voltage","current");
 	registerEnum(3,&waveMode,"waveMode",SQUARE_WAVE,"square","sine","triangle");
-	pmc_registerSettings();
+	lattikem_registerSettings();
 }
 
 int sourceControl_getControlMode()

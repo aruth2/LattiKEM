@@ -1,7 +1,7 @@
 #ifndef _SOURCECNTRL_H_
 #define _SOURCECNTRL_H_
 
-#include "pmc.h"
+#include "lattikem.h"
 
 enum SourceControlStates {VOLTAGE_CONTROL, CURRENT_CONTROL};
 enum Waves {SQUARE_WAVE, SINE_WAVE, TRIANGLE_WAVE};
