@@ -1,7 +1,7 @@
 # LattiKEM
 Simulate chemical reactions on a lattice using Kinetic Monte Carlo Methods
 
-##Getting started
+## Getting started
 Go to the source directory and build the executables
 ```
 make mixedhalide
@@ -40,7 +40,7 @@ The settings were organized to emphasize the most-performance critical settings 
 
 Here the modules and their purpose are listed. They are organized from the deepest core modules to the most high level modules. All core modules are compiled into the Executables, but only modules within the same EnergyModel are compiled together.
 
-###Core:
+### Core:
 1. **supp.c** - based support functions, list manipulations, string manipulations, and some basic math
 2. **matrix.c** - a few basic matrix operations.
 3. **settings.c** - loads the settings for all modules from a single settings file, also assigns default values.
@@ -51,6 +51,6 @@ Here the modules and their purpose are listed. They are organized from the deepe
 8. **pkmc.c** - manages a threadpool model of POSIX threads. Performs a parallel kinetic hop to advance the trajectory forward 1 step. This involves enumerating possible moves, creating jobs to evaluate each move, and determining the chosen move.
 9. **latticekem.c** - manages trajectories, creates administrator threads to propagate each trajectory, includes methods for post-processing.
 
-###EnergyModels:
+### EnergyModels:
 - **bandgap.c** - assumes atoms in the lattice move to reduce the energy of charge carriers. Calculates the energy of the charge carriers using a cluster approximation.
 - **mixedhalide.c** - implements bandgap.c, calls for a lattikem simulation of photosegregation in mixed-halide perovskites using the bandgap model
