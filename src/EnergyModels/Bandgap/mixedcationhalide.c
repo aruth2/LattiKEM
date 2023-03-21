@@ -10,7 +10,7 @@
 #include "perovskite.h"
 #include "bandgap.h"
 
-char dir[1000];
+//char dir[1000];
 double iodineRatio, FARatio, FAvacancyRatio, IvacancyRatio;
 double clHopEnergy, iHopEnergy, faHopEnergy, csHopEnergy;
 int	coordinationNumber;//The number of shells used to define the local bandgap.
@@ -122,7 +122,7 @@ void mch_registerSettings()
 {
 	bg_registerSettings();
 	registerInt(&coordinationNumber,"coordinationNumber",3);
-	registerString(dir,"dir",".");
+	//registerString(dir,"dir",".");
 	registerDouble(&FAvacancyRatio,"FAvacancyRatio",0.00);
 	registerDouble(&IvacancyRatio,"IvacancyRatio",0.00);
 	registerDouble(&iodineRatio,"iodineRatio",0);
@@ -222,10 +222,10 @@ int main(int argc, char **argv)
 	FILE *infile = fopen(argv[1],"r");
 	loadSettings(infile);
 	fclose(infile);
-	mkdir2(dir);
+	mkdir2(getDir());
 	 
 	char outfileName[1000];
-	sprintf(outfileName,"%s/settings",dir);
+	sprintf(outfileName,"%s/settings",getDir());
 	
 	FILE *outfile = fopen(outfileName,"w");
 	saveSettings(outfile);

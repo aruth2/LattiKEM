@@ -8,7 +8,7 @@ int maxCoordination;
 int numStates;
 int numOpticsEnergies;
 
-double	temperature;//In units of eV There could be seperate electronic and ionic temperatures
+//double	temperature;//In units of eV There could be seperate electronic and ionic temperatures
 double	numExcitations;
 double	numExcitationsSecondStep;
 double optics_llimit = 1.0;
@@ -216,7 +216,8 @@ double OS_energy(crystal *crys,int *coord,Configuration *config)
 	
 	int numcoordinationatoms = crys_elementCount(crys,coordElement);	
     double currentExcitations =  *(config->externalConditions+0);
-
+	double temperature = getTemperature();
+	
     OptoelectronicState *OS = config->data;
     //printf("Dat is located at %d\n",(int *)dat);
 	int i;
@@ -412,7 +413,7 @@ double bg_energy(Configuration *config)
 void bg_registerSettings()
 {
 	lattikem_registerSettings();
-	registerDouble(&temperature,"temperature",0.025);
+	//registerDouble(&temperature,"temperature",0.025);
 	registerDouble(&numExcitations,"numExcitations",10);
 	registerDouble(&numExcitationsSecondStep,"numExcitationsSecondStep",0);
 	registerDouble(&fermiConvergence,"fermiConvergence",1e-5);
@@ -431,7 +432,7 @@ void *traj_generator(Trajectory *traj))
 {
 	shoulder = malloc(numOpticsEnergies*sizeof(double));
     shoulderenergies = malloc(numOpticsEnergies*sizeof(double));
-	absorptionshoulder(temperature,0.025,shoulder,shoulderenergies,&shoulder_llimit,&shoulder_ulimit);
+	absorptionshoulder(getTemperature(),0.025,shoulder,shoulderenergies,&shoulder_llimit,&shoulder_ulimit);
 	bandgapFunction = newbandgapFunction;	
 	coordElement = newcoordElement;
 	bandgapAlteringElements = newbandgapAlteringElements;

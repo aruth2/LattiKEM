@@ -4,7 +4,7 @@
 #include "supp.h"
 #include <stdarg.h>
 
-#define maxSettings 100
+#define maxSettings 1000
 #define stringSize 100
 #define maxEnumSize 10
 

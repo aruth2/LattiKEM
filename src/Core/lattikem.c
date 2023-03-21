@@ -42,6 +42,11 @@ void lattikem_startupMessage()
 	printf(message);
 }
 
+char *getDir()
+{
+	return dir;
+}
+
 void lattikem_registerSettings()
 {
 	lattikem_startupMessage();
@@ -59,7 +64,7 @@ void lattikem_registerSettings()
 	//registerInt(&lightCubeFrameRepeat,"lightCubeFrameRepeat",1);
 	//registerInt(&lightCubeFrameStride,"lightCubeFrameStride",1);
 		
-	registerEnum(4,&jobType,"job",JOB_AUTO,"auto","restart","continue","postProcess");
+	registerEnum(5,&jobType,"job",JOB_AUTO,"auto","restart","continue","postProcess","main");
 	registerEnum(3,&averagingMethod,"averagingMethod", TIME_AVERAGE, "step","time","none");
 	registerEnum(2,&equivocationMethod,"equivocationMethod", STEP_SUM, "stepSum","timeElapsed");
 		
@@ -147,12 +152,12 @@ void simulateTrajectories()
 		maxThreads = sysconf(_SC_NPROCESSORS_ONLN);
 	printf("Num threads %d\n",maxThreads);
 	
-	traj_parallelInitialization(trajectories, numRuns, maxThreads, dir, (jobType == JOB_AUTO) || (jobType == JOB_CONTINUE) || (jobType == JOB_POSTPROCESS));
+	traj_parallelInitialization(trajectories, numRuns, maxThreads, dir, (jobType == JOB_AUTO) || (jobType == JOB_CONTINUE) || (jobType == JOB_POSTPROCESS) || (jobType == JOB_MAIN));
 	startWorkerThreadPool(maxThreads, trajectories, numRuns);
 	
 	int irun,numactiveruns=0;
 	int iTraj=0;
-	if((jobType == JOB_AUTO) || (jobType == JOB_CONTINUE) || (jobType == JOB_RESTART))//Only case which does not perform trajectories is JOB_POSTPROCESS
+	if((jobType == JOB_AUTO) || (jobType == JOB_CONTINUE) || (jobType == JOB_RESTART) || (jobType == JOB_MAIN))//Only case which does not perform trajectories is JOB_POSTPROCESS
 	while(numactiveruns > 0 || iTraj < numRuns)
 	{
 		numactiveruns = 0;
@@ -178,7 +183,8 @@ void simulateTrajectories()
 
 	printf("All runs finished\n");
 			system("date\n");
-	postProcess(trajectories);		
+	if(jobType != JOB_MAIN)
+		postProcess(trajectories);		
 			
 }
 

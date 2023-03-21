@@ -11,11 +11,13 @@
 #include "bandgap.h"
 
 
-char dir[1000];
+//char dir[1000];
 double latticeConstant = 3.905;//This could really use something more clever
 double iodineRatio, vacancyRatio;
 double brHopEnergy, iHopEnergy;
 double IBrRepulsiveEnergy;//Energy is per halide atom. If all eight of a I atoms neighbors are Br it will be assessed the full energy, otherwise it will be proportionally lower. 
+double bowingParameter,pureIBandgap,bandgapDifference;
+
 int XLatticeShells[] = {6, 30, 84, 204, 354, 642, 936, 1464, 1950};//The number of X-site anion neighbors surrounding a B-site cation in perovskites up to i shells
 int	sizex,sizey,sizez;
 int pbcMask;//a 3 bit mask for pbc in x,y and z
@@ -37,7 +39,8 @@ double mh_gapEnergy(int numBandgapAlteringElements, int *numEachElement)
 	numI = *(numEachElement+1);
 	double x = (double)numBr/(numBr+numI);
 	//printf("Number of Br %d number of I %d\n",numBr,numI);
-	return 0.39*x + 0.33*pow(x,2)+1.57;
+	//return 0.39*x + 0.33*pow(x,2)+1.57;
+	return (bandgapDifference-bowingParameter)*x + bowingParameter*pow(x,2)+pureIBandgap;
 }
 
 void mh_trajectory(Trajectory *traj)
@@ -101,12 +104,17 @@ crystal *mh_crystal()
 }
 void mh_registerSettings()
 {
-	registerString(dir,"dir",".");
+	//registerString(dir,"dir",".");
     registerDouble(&(vacancyRatio),"vacancyRatio",0.0);
     registerDouble(&(iodineRatio),"iodineRatio",0.5);
     registerDouble(&(brHopEnergy),"brHopEnergy",0.25);
     registerDouble(&(iHopEnergy),"iHopEnergy",0.25);
     registerDouble(&(IBrRepulsiveEnergy),"IBrRepulsiveEnergy",0.0);
+    //For MAPb(I1-xBrx)3
+	//E(x)  = 0.39x + 0.33x^2+1.57   DOI: 10.1021/nl400349b
+    registerDouble(&(pureIBandgap),"pureIBandgap",1.57);
+    registerDouble(&(bowingParameter),"bowingParameter",0.33);
+    registerDouble(&(bandgapDifference),"bandgapDifference",0.72);
     registerInt(&(sizex),"sizex",4);
     registerInt(&(sizey),"sizey",4);
     registerInt(&(sizez),"sizez",4);
@@ -145,10 +153,10 @@ int main(int argc, char **argv)
 	FILE *infile = fopen(argv[1],"r");
 	loadSettings(infile);
 	fclose(infile);
-	mkdir2(dir);
+	mkdir2(getDir());
 	 
 	char outfileName[1000];
-	sprintf(outfileName,"%s/settings",dir);
+	sprintf(outfileName,"%s/settings",getDir());
 	FILE *outfile = fopen(outfileName,"w");
 	saveSettings(outfile);
 	fclose(outfile);

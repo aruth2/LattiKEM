@@ -417,7 +417,7 @@ int traj_load(Trajectory *traj)
 	if(traj->crys == NULL)
 		printf("No crystal found, unsure what to do.\n");
 	
-	if(startAtStep != -1)
+	if(startAtStep != -1 && (traj->step > startAtStep))
 	{
 		printf("It has been specified to start at step %d\n",startAtStep);
 		traj_crysAtStep(traj->crys,traj->selectedMoves,traj->step,startAtStep,CN_NO_NETWORK);

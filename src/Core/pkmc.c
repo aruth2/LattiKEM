@@ -23,23 +23,18 @@ int numTrajectories;
 
 void traj_parallelKineticHopping(Trajectory *traj)
 {
-	/* Finds and performs a hop, swapping an atom and a defect. Only hops which involve the allowed hop elements can be performed.
-	 * If energy bias is on, then the energy for all possible hops must be calculated.
+	/* Finds and performs a hop, swapping two species. Only hops which involve the allowed hop elements can be performed.
+	 * The energy for all possible hops must be calculated.
 	 * energy jobs will be popped out to calculate the energy of a particular configuration.
-	 * If energybias is off, then the energy change will be calculated asynchronously by a thread.
 	 * */
-	 LatticeDynamics *LD = traj->LD;	  	 
+	LatticeDynamics *LD = traj->LD;	  	 
     MarkovChainMonteCarlo *mcmc = traj->mcmc;
     crystal *crys = traj->crys;
-    //int energybias = (traj->currentEnthalpyState) != 0; 
     double temperature = getTemperature(); 
-	//This comes from a time when we needed to entropically mix our lattice
-	int energybias = 1;
-	
     
     double *timestep=&(mcmc->timestep);  
 	
-    //Step 1 - enumerate all hops, if energybiasing is on, the total energy of the system after the hop is submitted as an energyjob
+    //Step 1 - enumerate all hops; the total energy of the system after the hop is submitted as an energyjob
 	
 	LD_listMoves(crys,LD,mcmc);
 	double *newenergy=(traj->energies+traj->step);
@@ -56,40 +51,21 @@ void traj_parallelKineticHopping(Trajectory *traj)
 	int iMove;
 	for(iMove=0;iMove<numMoves;iMove++)
 	{
-		if(energybias)
-		{
-			energyjob(moveEnthalpies+iMove,traj->iTraj,traj->step,*(moves+2*iMove),*(moves+2*iMove+1),NULL);
-		}
-		else
-		{
-			*(moveEnthalpies+iMove) = initialenergy;
-		}
+		energyjob(moveEnthalpies+iMove,traj->iTraj,traj->step,*(moves+2*iMove),*(moves+2*iMove+1),NULL);
 	}
     //Wait until the energy of all post-hop structures has been evaluated
-	if(energybias)
 	threadwait();
 			
-	//For each hop, sum the enthalpic change with the energy barrier. s.
+	//For each hop, sum the enthalpic change with the energy barrier.
 	mcmc->rate =0;
 	int mostFavorableMove=0;
 	for (iMove=0;iMove<numMoves;iMove++)
 	{
-		if(energybias)
-		{
 		*(moveRates+iMove) = exp(-(*(moveEnthalpies+iMove)-initialenergy+*(moveBarriers+iMove))/temperature);
 		//printf("move %d has an enthalpy of %g, a barrier of %g, a previous energy of %g, and results in a rate of %g\n",iMove,*(moveEnthalpies+iMove),*(moveBarriers+iMove),initialenergy,*(moveRates+iMove));
 		if(*(moveEnthalpies+iMove)+*(moveBarriers+iMove)<*(moveEnthalpies+mostFavorableMove)+*(moveBarriers+mostFavorableMove))
-		mostFavorableMove = iMove; 
-		}
-		else
-		{
-		*(moveRates+iMove) = exp(-*(moveBarriers+iMove)/temperature);
-		//printf("move %d has a barrier of %g, and results in a rate of %g\n",iMove,*(moveBarriers+iMove),*(moveRates+iMove));
-		if(*(moveBarriers+iMove)<*(moveBarriers+mostFavorableMove))
-		mostFavorableMove = iMove; 
-		}
-		
-		
+			mostFavorableMove = iMove; 
+
 		mcmc->rate += *(moveRates+iMove);
 	}
 	
@@ -107,16 +83,13 @@ void traj_parallelKineticHopping(Trajectory *traj)
 	weightToProbabilityRange(moveRates, moveProbabilityRanges, numMoves);
 	int chosenMove = mcmc->chosenMove = chooseItem(moveProbabilityRanges,numMoves);
 	
-	
 	//printf("Chosen move is %d involving swap of %d %s and %d %s \n",chosenMove,*(moves+2*chosenMove),crys->species+*(moves+2*chosenMove)*namelength,*(moves+2*chosenMove+1),crys->species+*(moves+2*chosenMove+1)*namelength);
 
     //perform the hop
 	cn_swap(crys,*(moves+2*(mcmc->chosenMove)),*(moves+2*(mcmc->chosenMove)+1),CN_HAS_NETWORK);
     
-	//If energybias is on, the energy of the new configuration was already calculated, but we need to calculate the electronic structure and optics.
-    //If energybias is off, the energy will be calculated for the first time along with structure.
-    //Either way the calculation can be done asynchronously by adding an energyjob    
-    if(energybias)
+	//The energy of the new configuration was already calculated, but we need to calculate the properties of the chosen structure.
+    //This can be done asynchronously by adding an energyjob    
 	*newenergy = *(moveEnthalpies+(mcmc->chosenMove));
 	
 	energyjob(newenergy,traj->iTraj,traj->step,0,0,NULL);
@@ -125,8 +98,6 @@ void traj_parallelKineticHopping(Trajectory *traj)
 	mcmc->timestep = 1/mcmc->rate;
 
 }
-
-
 
 void threadwait()
 {
@@ -190,9 +161,8 @@ void kineticthread(workerData *wd)
      int threadnumber = wd->threadnumber;
      Configuration *config;
 	 Trajectory *traj;
-	 printf("\nStarted worker thread %d\n\n",threadnumber);
+	 printf("\nStarted worker thread %d\n",threadnumber);
 	 kineticjob *job;
-	 int stategetter;
 	 void *dataHolder;
 	 
 	 while(1)
