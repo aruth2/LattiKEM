@@ -192,8 +192,8 @@ typedef struct Configuration{
     void *data;
     int enthalpyState;//0 means no energy biasing is used. 
     double *externalConditions;//A double precision number which is passed to determine how the energy is calculated. //E.g. this could be an applied voltage
-	//Series data is a double precision number for each configuration. 
-	//These are attached to the trajectory and saved by the trajectory itself
+    //Series data is a double precision number for each configuration. 
+    //These are attached to the trajectory and saved by the trajectory itself
     double *seriesData;
 } Configuration;
 ```
