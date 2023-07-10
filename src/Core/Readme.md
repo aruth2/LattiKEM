@@ -15,6 +15,9 @@
 
 # Crystal
 
+The crystal module defines a cell of an infinite lattice.  
+
+
 # Crystal Network
 
 # Lattice Dynamics
