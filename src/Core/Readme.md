@@ -106,8 +106,15 @@ int numEle;
 } NearestNeighborDescriptor;
 ```
 
+Possibly the most important function in the crystal network module is cn_swap which performs the delicate task of swapping two atoms on the lattice and reconstituing their network adjacency information.
+
+```
+void cn_swap(crystal *crys, int atom1, int atom2, int noNetwork);
+```
+
 a full list of functions in the crystal network module is provided below:
 
+# TODO Organize and add comments to these functions
 ```
 void cn_allocateCrystalNetwork(crystal *crys);
 void cn_fillNetwork(crystal *crys, double nndistance, char *elementList, int numEle);
@@ -128,9 +135,120 @@ void cn_allocatedSize(crystal *crys);
 
 # Lattice Dynamics
 
+Dynamic processes in the crystal are managed by the lattice dynamics module. The lattice dynamics module provides means for associating changes in energy with specific moves that could be made in the lattice. At present, the only allowed moves are a swap betweeen two adjacent atoms on the lattice. 
 
+Pairwise elemental energy barriers are defined in the lattice dynamics structure:
+
+```
+typedef struct LatticeDynamics{
+    //Describes the allowed moves
+    char *hopPairs;
+    double *hopPairEnergies;
+    int numHopPairs;
+
+} LatticeDynamics;
+```
+
+The lattice dynamics module provides means for enumerating and comparing different possible moves. The structure responsible for this is called "MarkovChainMonteCarlo". MarkovChainMonteCarlo is defined in latticedynamics.h:
+
+```
+typedef struct MarkovChainMonteCarlo{
+	
+    int *moves; //List of atom swap pairs
+    double *moveBarriers;
+    int numMoves; 
+    double *moveEnthalpies;
+    
+	int chosenMove;
+	double initialenergy;
+	
+	//This is only used in kmc
+    double *moveRates;
+    double *moveProbabilityRanges;
+    double timestep;
+    double rate;
+	
+} MarkovChainMonteCarlo;
+```
+
+The MCMC object stores the list of all possible moves from the current crystal. It has places for storing the energy differences from each move as well as arrays for the data generated in the kinetic monte carlo algorithm: move rates and probability ranges.
+
+An MCMC object can be initialized from a crystal using a description of possible moves (a LatticeDynamics object) using the LD_list moves function:
+
+```
+void LD_listMoves(crystal *crys, LatticeDynamics *LD, MarkovChainMonteCarlo *mcmc)
+```
+
+In higher level modules, the crystal is passed around as a data packet containing the crystal, external conditions applied to the crystal, and derived properties of the crystal. The structure of this data packet is called "Configuration" and is defined in latticedynamics.h
+
+```
+typedef struct Configuration{
+    crystal *crys;
+    int savedata;
+    char dataFileName[1000];
+    char crysFileName[1000];
+    
+    double energy;
+    void *data;
+    int enthalpyState;//0 means no energy biasing is used. 
+    double *externalConditions;//A double precision number which is passed to determine how the energy is calculated. //E.g. this could be an applied voltage
+	//Series data is a double precision number for each configuration. 
+	//These are attached to the trajectory and saved by the trajectory itself
+    double *seriesData;
+} Configuration;
+```
+
+Finally, the lifetime of the crystal throughout the simulation is described by the "Trajectory" structure. The trajectory structure contains the present information about the crystal's current state as well as past information about what moves were performed to evolve the crystal. It also contains kinetic information including the time and total energy at each step of the evolution.
+
+```
+//A Trajectory object contains a list of all moves performed during simulation.
+//It also describes breakpoints for when data is saved and the steps when external conditions are changed
+//It is started as a thread on the performTrajectory function 
+typedef struct Trajectory{
+	
+    int step;    
+    //int numSteps;
+	int numExternalConditions;
+
+	int iTraj;
+
+	double *energies;
+	//This is used to encode information which gets passed to the energyfunction to describe what energetic terms are used
+	//E.g. turn on/turn off electric field. If the enthalpyState is zero then no enthalpy will be calculated.
+	
+	//Breakpoints are when data is saved
+	//They may become obsolete if a postprocessing utility is made which can quickly produce the data at any step/configuration
+	int *breakpoints;
+	int numbreakpoints;
+	
+	double *timeseries;
+	double *timeSteps;
+	double *externalConditions;
+	//Series data is a double precision number for each configuration. 
+	//These are attached to the trajectory and saved by the trajectory itself
+	double *seriesData;
+	int numSeriesData;
+	char **seriesDataNames;
+
+    char *dir;
+    int *selectedMoves;
+    
+    MarkovChainMonteCarlo *mcmc;
+    LatticeDynamics *LD;
+    NearestNeighborDescriptor nnd[maxnnds];
+    int numnnds;
+    
+    crystal *crys;
+    //This is only used in metropolis
+    int numrejectedhops;
+	int state;
+	int willBeLoaded;
+} Trajectory;
+```
 
 # Parallel Kinetic Monte Carlo
+
+
 
 # LattiKEM
 
