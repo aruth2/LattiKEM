@@ -208,27 +208,27 @@ typedef struct Trajectory{
 	
     int step;    
     //int numSteps;
-	int numExternalConditions;
+    int numExternalConditions;
 
-	int iTraj;
+    int iTraj;
 
-	double *energies;
-	//This is used to encode information which gets passed to the energyfunction to describe what energetic terms are used
-	//E.g. turn on/turn off electric field. If the enthalpyState is zero then no enthalpy will be calculated.
+    double *energies;
+    //This is used to encode information which gets passed to the energyfunction to describe what energetic terms are used
+    //E.g. turn on/turn off electric field. If the enthalpyState is zero then no enthalpy will be calculated.
 	
-	//Breakpoints are when data is saved
-	//They may become obsolete if a postprocessing utility is made which can quickly produce the data at any step/configuration
-	int *breakpoints;
-	int numbreakpoints;
-	
-	double *timeseries;
-	double *timeSteps;
-	double *externalConditions;
-	//Series data is a double precision number for each configuration. 
-	//These are attached to the trajectory and saved by the trajectory itself
-	double *seriesData;
-	int numSeriesData;
-	char **seriesDataNames;
+    //Breakpoints are when data is saved
+    //They may become obsolete if a postprocessing utility is made which can quickly produce the data at any step/configuration
+    int *breakpoints;
+    int numbreakpoints;
+
+    double *timeseries;
+    double *timeSteps;
+    double *externalConditions;
+    //Series data is a double precision number for each configuration. 
+    //These are attached to the trajectory and saved by the trajectory itself
+    double *seriesData;
+    int numSeriesData;
+    char **seriesDataNames;
 
     char *dir;
     int *selectedMoves;
@@ -241,8 +241,8 @@ typedef struct Trajectory{
     crystal *crys;
     //This is only used in metropolis
     int numrejectedhops;
-	int state;
-	int willBeLoaded;
+    int state;
+    int willBeLoaded;
 } Trajectory;
 ```
 
