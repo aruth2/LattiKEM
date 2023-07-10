@@ -36,8 +36,6 @@ A crystal contains a list of atoms and their positions. Periodic boundary condit
 
 The crystal module also contains numerous methods for creating and manipulating crystals. A full listing of the functions of the crystal module is below:
 
-# TODO Organize and add comments to these functions
-
 ```
 void crys_allocate(crystal *crys);
 void crys_free(crystal *crys);
@@ -114,7 +112,6 @@ void cn_swap(crystal *crys, int atom1, int atom2, int noNetwork);
 
 a full list of functions in the crystal network module is provided below:
 
-# TODO Organize and add comments to these functions
 ```
 void cn_allocateCrystalNetwork(crystal *crys);
 void cn_fillNetwork(crystal *crys, double nndistance, char *elementList, int numEle);
@@ -248,9 +245,43 @@ typedef struct Trajectory{
 
 # Parallel Kinetic Monte Carlo
 
+Having defined a KMC step with the MCMC structure, we now perform the KMC step. The KMC step is performed using the first level of parallism in LattiKEM: parallelization over the possible moves that could be performed in the KMC step. The step itself is performed in the traj_parallelKineticHopping function.
 
+```
+void traj_parallelKineticHopping(Trajectory *traj);
+```
+
+while the computationally-costliest part, evaluating the energy of a single Configuration, is offloaded to worker threads in a thread pool. pkmc.c contains functions for intializing the worker threadpool, adding jobs to the queue, and the operation of worker threads. 
+
+A single job for a worker thread is defined in the kineticJob structure:
+
+```
+//A kinetic job is a single task which any worker thread can take on and complete. Following completion of the task,
+//The energy variable is filled in, and if requested the data is also filled in. The worker thread may be tasked
+//with saving the data and also possibly the crystal following its completion of the job.
+typedef struct kineticjob{
+	int iTraj;
+	int step;
+	double *energy;
+	Configuration *dataSwap;
+	int additionalMoveAtom1, additionalMoveAtom2;
+} kineticjob;
+```
+
+The full list of functions in pkmc.h is below:
+
+```
+void traj_parallelKineticHopping(Trajectory *traj);
+void threadwait();
+void energyjob(double *energy, int iTraj, int step,int additionalMoveAtom1, int additionalMoveAtom2, Configuration *dataswap);
+void kineticthread(workerData *wd);
+void startWorkerThreadPool(int numthreads, Trajectory *newtraj, int newNumTrajectories);
+void traj_parallelInitialization(Trajectory *trajectories, int numRuns, int maxThreads, char *dir, int jobType);
+```
 
 # LattiKEM
+
+
 
 # Support
 
