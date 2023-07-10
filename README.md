@@ -1,8 +1,8 @@
-# LattiKEM
+# LattiKEM v1.0
 ## LATTIce chemical Kinetic Evolution Modeling
 Simulate ion migration on a lattice using Kinetic Monte Carlo.  
 
-Welcome to the first official open-source version of LattiKEM! v1.0
+Welcome to the first official open-source version of LattiKEM! 
 
 LattiKEM has been used privately from 2016-2023 for a series of journal articles on the photosegregation phenomenon in organic metallic mixed halide perovskites. We considered posting it to the public many times but the code was always in severe need of documentation and as more features were added the barrier to documenting everything became ever greater. The critical moment was when we found out that another research group made their own version of the code around 2021 to verify our results and test some aspects of photosegregation.
 
