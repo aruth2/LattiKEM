@@ -83,7 +83,52 @@ int crys_elementIndex(crystal *crys, char *element);
 
 # Crystal Network
 
+The crystal network module adds graph-based network functionality to a crystal. In the crystal network, adjacent atoms are linked to one another. Each atom has it's own adjacency list and two atoms are linked if they appear in each other's adjacency lists. Storing adjacency information in this way is a means to contain the computational scaling of chemistry codes. The number of pairwise interactions scales quadratically with the number of atoms in the system, but the number of neighboring pairs scales linearly. 
+
+The crystal network is defined in crystal.h. 
+
+```
+typedef struct crystalnetwork {
+int *adjacencyList; //Indicies are iAtom * maxconnections + jNeighbor
+int *numAdjacent;
+} crystalnetwork;
+```
+
+Adjacency information could represent a chemical bond, but it could also represent any other information needed to evaluate the interaction between atoms or the possible chemical evolution of the crystal.
+
+Filling of adjacency information is aided by a structure which describes what elements can be linked to which other elements, and the maximum distance between them. The "NearestNeighborDescriptor" is defined in crystalnetwork.h:
+
+```
+typedef struct NearestNeighborDescriptor {
+double nndistance;
+char *elementList;
+int numEle;
+} NearestNeighborDescriptor;
+```
+
+a full list of functions in the crystal network module is provided below:
+
+```
+void cn_allocateCrystalNetwork(crystal *crys);
+void cn_fillNetwork(crystal *crys, double nndistance, char *elementList, int numEle);
+void cn_printAdjacencyList(crystal *crys);
+void cn_nearestNeighbors(crystal *crys, int *neighbors, int *numneighbors, int index);
+void cn_nthNearestNeighbors(crystal *crys, nneighbors, int *numnneighbors, int index, int n);
+void cn_integratednthNearestNeighbors(crystal *crys, int *integratednneighbors, int *numintegratednneighbors, int index, int nmax);
+void cn_shellComposition(crystal *crys, int index, double *shells, char *shellelements, int numshellelements, double *distances, int *numshells);
+void cn_coordination(crystal *crys, char *element, char *coordElements, int numcoordElements, int *coord, int coordinationNumber, int maxCoordination);
+void numberOfCoordNeighbors(crystal *crys, char *coordElement, char *countedElements, int numCountedElements);
+void cn_swap(crystal *crys, int atom1, int atom2, int noNetwork);
+void cn_fillFromnnd(crystal *crys, NearestNeighborDescriptor *nnd);
+void cn_addLink(crystal *crys, int i, int j);
+int cn_areConnected(crystal *crys, int i, int j);
+void cn_bucketFillNetwork(crystal *crys, double nndistance, char *elementList, int numele, int bucketDirection);
+void cn_allocatedSize(crystal *crys);
+```
+
 # Lattice Dynamics
+
+
 
 # Parallel Kinetic Monte Carlo
 
