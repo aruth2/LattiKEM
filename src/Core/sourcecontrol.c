@@ -12,13 +12,13 @@ void traj_wave(Trajectory *traj, int stepsPerSwitch, int thisExternalCondition, 
 	printf("Initializing a wave type %d in slot %d with %d steps per switch a delay of %d an offset of %g and a modulation of %g\n",waveType,thisExternalCondition,stepsPerSwitch,stepDelay, offset,modulation);
     //printf("External Conditions are saved to %d\n",traj->externalConditions);
     //int iWave,iStep;
-    int usedStepsPerSwitch;
+    //int usedStepsPerSwitch;
     int numSteps = getNumSteps();
-    int waveSteps = numSteps-stepDelay;
-    if(stepsPerSwitch > waveSteps)
-	usedStepsPerSwitch = waveSteps;
-	else
-	usedStepsPerSwitch=stepsPerSwitch;
+    //int waveSteps = numSteps-stepDelay;
+    //if(stepsPerSwitch > waveSteps)
+	//usedStepsPerSwitch = waveSteps;
+	//else
+	//usedStepsPerSwitch=stepsPerSwitch;
     
 
 	double value;

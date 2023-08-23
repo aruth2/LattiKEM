@@ -9,12 +9,17 @@ char *vacancyatom = "V";
 
 void cn_allocateCrystalNetwork(crystal *crys)
 {
-	crys->network->adjacencyList = malloc(maxconnections*crys->totalAtoms*sizeof(int));
-	crys->network->numAdjacent = malloc(crys->totalAtoms*sizeof(int));
-	int i;
-	for(i=0;i<crys->totalAtoms;i++)
-	*(crys->network->numAdjacent+i) = 0;
+	crys->network->adjacencyList = calloc(maxconnections*crys->totalAtoms,sizeof(int));
+	crys->network->numAdjacent = calloc(crys->totalAtoms,sizeof(int));
+	//int i;
+	//for(i=0;i<crys->totalAtoms;i++)
+	//*(crys->network->numAdjacent+i) = 0;
 	
+}
+
+void cn_allocatedSize(crystal *crys)
+{
+	printf("Expected Size of crystal network is %d\n",maxconnections*crys->totalAtoms*sizeof(int)+crys->totalAtoms*sizeof(int));
 }
 
 void cn_addLink(crystal *crys, int i, int j)
@@ -325,8 +330,6 @@ void cn_shellComposition(crystal *crys, int index, double *shells, char *shellel
 	*numshells = shellnumber-1;
 }
 
-
-
 void cn_coordination(crystal *crys, char *coordElement, char *countedElements, int numCountedElements, int *coord, int coordinationNumber, int maxCoordination)
 {
 	//If passed a crystal, an element, and a series of other elements
@@ -373,6 +376,123 @@ void cn_coordination(crystal *crys, char *coordElement, char *countedElements, i
 			}
 		}
 	}
+}
+
+void cn_bitA_integratednthNearestNeighbors(crystal *crys, uint32_t *restrict integratednneighbors, int *restrict numintegratednneighbors, int *restrict shellatoms, int *restrict lastshellatoms, int index, int n)
+{
+	//printf("Location of pointers is %d, %d, %d, %d, %d\n",crys,integratednneighbors,numintegratednneighbors,shellatoms,lastshellatoms);
+	//This function finds the all the nth nearest neighbors of an atom.
+	//The nth nearest neighbors exclude atoms which were neighbors of any previous shell.
+	int neighbors[maxconnections];
+	int numneighbors;
+	int neighbor;
+
+	int numshellatoms;
+	int *shellswaptmp;
+	
+	int shellnumber;
+	int i,j;
+
+	SetBit(integratednneighbors,index);
+	*numintegratednneighbors = 1;
+	lastshellatoms[0] = index;
+	int numlastshellatoms = 1;
+	//printf("Finding neighbors up to %d shells\n",n);
+	//printf("Allocating %d space for neighbors\n",maxconnections);
+
+	for(shellnumber = 1;shellnumber<=n;shellnumber++)
+	{
+		//printf("In shell %d of %d\n",shellnumber,n);
+		numshellatoms=0;
+		for(i=0;(i<numlastshellatoms);i++)//Identify all atoms that are neighbors of atoms in last shell
+		{
+			//printf("Getting the nearest neighbors of atom %d\n",*(lastshellatoms+i));
+			//printf("i %d of %d\n",i,numlastshellatoms);
+            cn_nearestNeighbors(crys,neighbors,&numneighbors,*(lastshellatoms+i));
+           // printf("Found %d neighbors of atom %d\n",numneighbors,*(lastshellatoms+i));
+            for(j=0;j<numneighbors;j++)
+            {
+                //Atom has never been seen before, therefore it is part of shell
+                neighbor = *(neighbors+j);
+                //printf("Testing Neighbor %d\n",neighbor);
+                if(!TestBit(integratednneighbors,neighbor))
+                {
+                    *(shellatoms+numshellatoms) = neighbor;
+                    numshellatoms++;
+                    SetBit(integratednneighbors,neighbor);                    
+                    (*(numintegratednneighbors))++;
+                    //printf("j %d integratednneighbors %d\n",j,*(numintegratednneighbors));
+                }
+            }
+            //printf("i is %d of %d\n",i,numlastshellatoms);
+		}
+		
+		shellswaptmp = shellatoms; //Swap pointers so that lastshellatoms is populated and shellatoms has space to work
+		shellatoms = lastshellatoms;
+		lastshellatoms = shellswaptmp;
+		
+		numlastshellatoms=numshellatoms;
+	}
+	
+}
+
+void cn_bitA_clusterApprox(crystal *restrict crys, char *restrict coordElement, char *restrict countedElements, int numCountedElements, int *restrict coord, int coordinationNumber, int maxCoordination)
+{
+	//If passed a crystal, an element, and a series of other elements
+	//This determines how many of each of the other elements surrounds the first element
+	//The coordinationNumber can be used to find the coordination up to a further shell, for instance the next-nearest neighbors (coordinationNumber=2).
+
+	int estart = crys_elementOffset(crys,coordElement);
+	int numatoms = crys_elementCount(crys,coordElement);
+	int totalAtoms = crys->totalAtoms;
+	
+	int totalElements = crys->numElements;
+	int elementBoundsArray[totalElements+1];
+	crys_elementBoundsArray(crys,elementBoundsArray);
+	int elementIndicies[numCountedElements];
+	
+	//printf("Allocating arrays of size %d %d %d\n",numatoms*totalAtoms,numatoms*totalAtoms,numatoms*2*maxCoordination);
+	int shellatoms[totalAtoms];
+	int lastshellatoms[totalAtoms];
+	uint32_t nneighbors[roundup(totalAtoms,32)/32];//Bit array of visited neighbors
+	//printBits(nneighbors,sizeof(nneighbors));
+
+	int i;
+	int numnneighbors,coordindex;
+	for(coordindex=0;coordindex<numCountedElements;coordindex++)
+	{
+	elementIndicies[coordindex] = crys_elementIndex(crys,countedElements+coordindex*namelength);
+	for(i=0;i<numatoms;i++)
+		*(coord+i*numCountedElements+coordindex) = 0;
+	//printf("Element index for %s is %d\n",countedElements+namelength*coordindex,elementIndicies[coordindex]);
+	}
+	
+	for(i=0;i<numatoms;i++)
+	{
+		memset(nneighbors,0,sizeof(nneighbors));
+		//printf("On atom %d which is %s\n",i+estart,crys->species+(i+estart)*namelength);
+		for(coordindex=0;coordindex<numCountedElements;coordindex++)
+			*(coord+i*numCountedElements+coordindex) = 0;
+		//printf("Before Species is located at %d\n",crys->species);
+		cn_bitA_integratednthNearestNeighbors(crys,nneighbors,&numnneighbors,shellatoms,lastshellatoms,i+estart,coordinationNumber);
+		//printf("After Species is located at %d\n",crys->species);
+		//printBits(nneighbors,sizeof(nneighbors));
+		//printf("%d nneighbors %d\n",numnneighbors,&numnneighbors);
+		for(coordindex = 0;coordindex<numCountedElements;coordindex++)
+		{
+			int iEle = elementIndicies[coordindex];
+			int iAtom;
+			int start=elementBoundsArray[iEle];
+			int end=elementBoundsArray[iEle+1];
+			int eleCount = 0;
+			for(iAtom=start;iAtom<end;iAtom++)
+				eleCount += TestBit(nneighbors,iAtom);
+			*(coord+i*numCountedElements+coordindex) = eleCount;
+		}
+
+		//printf("Finished counting neighbors\n");
+	}
+	//printf("Finished Coordination\n");
 }
 
 

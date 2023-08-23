@@ -20,7 +20,7 @@ typedef struct LatticeDynamics{
 
 typedef struct MarkovChainMonteCarlo{
 	
-	int *moves;
+	int *moves; //List of atom swap pairs
     double *moveBarriers;
     int numMoves; 
     double *moveEnthalpies;
@@ -79,9 +79,6 @@ typedef struct Trajectory{
 	double *seriesData;
 	int numSeriesData;
 	char **seriesDataNames;
-	
-	//double temperature; 
-    //int hopMode;
 
     char *dir;
     int *selectedMoves;

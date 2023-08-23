@@ -7,6 +7,9 @@ int	coordinationNumber;//The number of shells used to define the local bandgap.
 int maxCoordination;
 int numStates;
 int numOpticsEnergies;
+//int useGPU;
+int numGangs;
+int vectorLength;
 
 //double	temperature;//In units of eV There could be seperate electronic and ionic temperatures
 double	numExcitations;
@@ -358,7 +361,10 @@ double interatomic_energy(Configuration *config)
 		numEle1 = crys_elementCount(crys,repulsiveElements+namelength*iele1);
 		numElementNeighbors = numRepulsiveElements-iele1-1;
 		//printf("Computing coordination of element %s which has %d element neighbors\n",repulsiveElements+namelength*iele1,numElementNeighbors);
-		cn_coordination(crys,repulsiveElements+namelength*iele1,repulsiveElements+namelength*(iele1+1),numElementNeighbors,coord,1,maxRepulsiveCoordination);//Implicitly nearest neighbors (coordination #1)
+		//cn_coordination(crys,repulsiveElements+namelength*iele1,repulsiveElements+namelength*(iele1+1),numElementNeighbors,coord,1,maxRepulsiveCoordination);//Implicitly nearest neighbors (coordination #1)
+		
+		//CPU_clusterApprox(crys,repulsiveElements+namelength*iele1,repulsiveElements+namelength*(iele1+1),numElementNeighbors,coord,1,maxRepulsiveCoordination);//Implicitly nearest neighbors (coordination #1)
+		cn_bitA_clusterApprox(crys,repulsiveElements+namelength*iele1,repulsiveElements+namelength*(iele1+1),numElementNeighbors,coord,1,maxRepulsiveCoordination);//Implicitly nearest neighbors (coordination #1)
 		//printf("Finnished Computing coordination of element %s\n",repulsiveElements+namelength*iele1);
 		for(iele2 = iele1+1;iele2<numRepulsiveElements;iele2++)
 		{
@@ -397,8 +403,11 @@ double bg_energy(Configuration *config)
 	//crys_printAllAtoms(crys);
 	//crys_printElements(crys);
     //printf("determining the coordination from %d elements which are %s using coordination number %d and max coordination %d\n",numBandgapAlteringElements,bandgapAlteringElements,coordinationNumber,maxCoordination);
-	
-	cn_coordination(crys,coordElement,bandgapAlteringElements,numBandgapAlteringElements,coord,coordinationNumber,maxCoordination);
+	//if(useGPU == GPU_ON)
+	//ACC_clusterApprox(numGangs,vectorLength,crys,coordElement,bandgapAlteringElements,numBandgapAlteringElements,coord,coordinationNumber,maxCoordination);
+	//if(useGPU == GPU_OFF)
+	cn_bitA_clusterApprox(crys,coordElement,bandgapAlteringElements,numBandgapAlteringElements,coord,coordinationNumber,maxCoordination);
+	//cn_coordination(crys,coordElement,bandgapAlteringElements,numBandgapAlteringElements,coord,coordinationNumber,maxCoordination);
 	
 	data->interatomicEnergy = interatomic_energy(config);
 	data->photocarrierEnergy = OS_energy(crys,coord,config);
@@ -419,11 +428,14 @@ void bg_registerSettings()
 	registerDouble(&fermiConvergence,"fermiConvergence",1e-5);
 	registerDouble(&weightCutoff,"weightCutoff",0.1);
 	registerInt(&coordinationNumber,"coordinationNumber",3);
-	registerInt(&biasTurnOn,"biasTurnOn",100);
+	registerInt(&biasTurnOn,"biasTurnOn",0);
 	registerInt(&biasSwitch,"biasSwitch",1000000);
 	registerInt(&numOpticsEnergies,"numOpticsEnergies",1000);
 	registerInt(&saveChargeDensity,"saveChargeDensity",0);
-	registerEnum(2,&thermalDistribution,"thermalDistribution",BOLTZMANN_DISTRIBUTION,"boltzmann","fermi");	
+	registerInt(&numGangs,"numGangs",1);
+	registerInt(&vectorLength,"vectorLength",32);
+	registerEnum(2,&thermalDistribution,"thermalDistribution",FERMI_DISTRIBUTION,"boltzmann","fermi");	
+	//registerEnum(2,&useGPU,"useGPU",GPU_OFF,"GPU_OFF","GPU_ON");	
 }
 
 void bg_setup(double *newbandgapFunction(int numBandgapAlteringElements, int *numEachElement),char *newcoordElement,char *newbandgapAlteringElements,int newnumBandgapAlteringElements,int *coordinationShells,int newnumStates,

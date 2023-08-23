@@ -17,19 +17,18 @@
 enum direction {DIRECTION_X, DIRECTION_Y, DIRECTION_Z};
 
 typedef struct crystalnetwork {
-int *adjacencyList;
+int *adjacencyList; //Indicies are iAtom * maxconnections + jNeighbor
 int *numAdjacent;
 } crystalnetwork;
 
-//These names can be improved
 typedef struct crystal
 {
-	char *elements;
+	char *elements; //List of the elements used in the crystal
+	int *totalEachSpecies; //The number of atoms of each element
 	int numElements;
-	double *positions;
-	char *species;
+	double *positions; //List of x,y, and z values of every atom in the crystal
+	char *species; //The element of each atom
 	int totalAtoms;
-	int *totalEachSpecies;
 	double latticeVectors[9];
 	crystalnetwork *network;
 	
@@ -45,6 +44,7 @@ crystal * crys_linearInterpolation(crystal *crys1, crystal *crys2, int numimages
 void crys_removeAtom(struct crystal *crys, int removalsite);
 int crys_atomsOfElement(crystal *crys, char *element);
 int crys_elementOffset(crystal *crys, char *element);
+void crys_elementBoundsArray(crystal *crys, int *offsetArray);
 int crys_elementCount(crystal *crys, char *element);
 char * crys_elementString( int num, ... );
 int crys_elementInString(char *elementlist, int numElementsinlist,char *element);
@@ -72,4 +72,6 @@ crystal *crys_readxyz(char *name);
 double crys_atomVector(crystal *crys, int iatom1, int iatom2, double *r);
 crystal *crys_simpleCubic(char *element, double latticeConstant);
 void crys_addAtom(struct crystal *crys, char *element, double x, double y, double z);
+void crys_allocatedSize(crystal *crys);
+int crys_elementIndex(crystal *crys, char *element);
 #endif

@@ -32,7 +32,7 @@ void traj_parallelKineticHopping(Trajectory *traj)
     crystal *crys = traj->crys;
     double temperature = getTemperature(); 
     
-    double *timestep=&(mcmc->timestep);  
+    //double *timestep=&(mcmc->timestep);  
 	
     //Step 1 - enumerate all hops; the total energy of the system after the hop is submitted as an energyjob
 	
@@ -270,7 +270,7 @@ void startWorkerThreadPool(int numThreads, Trajectory *newtraj, int newNumTrajec
 			*(wd->trajectoriesteps+itraj)=(trajectories+itraj)->step;
 			}
     
-		pthread_create(kineticthreads+ithread,NULL,kineticthread,(void *)wd);
+		pthread_create(kineticthreads+ithread,NULL,(void *(*)(void *))kineticthread,(void *)wd);
 		}
 	
 }
@@ -311,7 +311,7 @@ void traj_parallelInitialization(Trajectory *trajectories, int numRuns, int maxT
 		for(iTraj=iGroup*maxThreads;iTraj<numRuns && (iTraj - iGroup*maxThreads) <maxThreads;iTraj++)
 		{
 			traj_identifySelf((trajectories+iTraj),iTraj,dir,willBeLoaded);
-			pthread_create(initializationThreads+iTraj,NULL,singleTrajectoryInitialization,(void *)(trajectories+iTraj));
+			pthread_create(initializationThreads+iTraj,NULL,(void *(*)(void *))singleTrajectoryInitialization,(void *)(trajectories+iTraj));
 		}
 		for(iTraj=iGroup*maxThreads;iTraj<numRuns && (iTraj - iGroup*maxThreads) <maxThreads;iTraj++)
 			pthread_join(*(initializationThreads+iTraj),NULL);

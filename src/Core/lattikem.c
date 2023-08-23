@@ -22,17 +22,17 @@ int equivocationMethod;
 void lattikem_startupMessage()
 {
 	char *message = 
-	"  _                                                   _     _               ____        ____                                     \n"
-	" | |                        _           _            | |   / |  _________   |   \\      /   |                                    \n"
-	" | |                       | |         | |           | |  / /   | _______|  | |\\ \\    / /| |                                             \n"
-	" | |                       | |         | |           | | / /    | |         | | \\ \\  / / | |                                       \n"
-	" | |                    ___| |___   ___| |___        | |/ /     | |         | |  \\ \\/ /  | |                                       \n"
-	" | |                   |____ ____| |____ ____|  O    |   /      | |______   | |   \\  /   | |                                    \n"
-	" | |           ___   _     | |         | |      _    |   \\      | _______|  | |    \\/    | |                                            \n"
-	" | |          / __ \\| |    | |         | |     | |   | |\\ \\     | |         | |          | |                                     \n"
-	" | |         | |  | | |    | |         | |     | |   | | \\ \\    | |         | |          | |                                     \n"
-	" | |_______  | |__| | |    | |         | |     | |   | |  \\ \\   | |______   | |          | |                                          \n"
-	" |_________|  \\____/|_|    |_|         |_|     |_|   |_|   \\_|  |________|  |_|          |_|                                               \n"
+    "  _                                                   _     _               ____        ____                                     \n"
+    " | |                        _           _            | |   / |  _________   |   \\      /   |                                    \n"
+    " | |                       | |         | |           | |  / /   | _______|  | |\\ \\    / /| |                                             \n"
+    " | |                       | |         | |           | | / /    | |         | | \\ \\  / / | |                                       \n"
+    " | |                    ___| |___   ___| |___        | |/ /     | |         | |  \\ \\/ /  | |                                       \n"
+    " | |                   |____ ____| |____ ____|  O    |   /      | |______   | |   \\  /   | |                                    \n"
+    " | |           ___   _     | |         | |      _    |   \\      | _______|  | |    \\/    | |                                            \n"
+    " | |          / __ \\| |    | |         | |     | |   | |\\ \\     | |         | |          | |                                     \n"
+    " | |         | |  | | |    | |         | |     | |   | | \\ \\    | |         | |          | |                                     \n"
+    " | |_______  | |__| | |    | |         | |     | |   | |  \\ \\   | |______   | |          | |                                          \n"
+    " |_________|  \\____/|_|    |_|         |_|     |_|   |_|   \\_|  |________|  |_|          |_|                                               \n"
 	"\n"
 	"A software package for the simulation of lattice chemistry by kinetic monte carlo methods\n"
 	"\n"
@@ -78,11 +78,11 @@ void lattikem_registerSettings()
 void performTrajectory(Trajectory *traj)
 {
 	int hopMode = getHopMode();
-	LatticeDynamics *LD = traj->LD;
+	//LatticeDynamics *LD = traj->LD;
 	int numSteps = getNumSteps();
     printf("\nStarting trajectory %d from step %d Performing trajectory to %d steps\n\n",traj->iTraj,traj->step,numSteps);
     crystal *crys = traj->crys;
-	int stateSetter;
+	//int stateSetter;
 
 	//Evaluate the energy of initial structure
 	energyjob(&(traj->mcmc->initialenergy),traj->iTraj,traj->step,0,0,NULL);
@@ -173,7 +173,7 @@ void simulateTrajectories()
 			{
 			//printf("Starting run %d\n",iTraj);
 			//system("date\n");
-            pthread_create(threads + iTraj,NULL,performTrajectory,trajectories+iTraj);
+            pthread_create(threads + iTraj,NULL,(void *(*)(void *))performTrajectory,trajectories+iTraj);
 			numactiveruns++;
 			}
 			iTraj++;

@@ -16,6 +16,14 @@ void crys_allocate(crystal *crys)
 	crys->network = calloc(1,sizeof(crystalnetwork));
 }
 
+void crys_allocatedSize(crystal *crys)
+{
+	int size;
+	size = crys->totalAtoms * namelength* sizeof(char) + 3*crys->totalAtoms*sizeof(double) + maxelements*sizeof(int)
+	+ maxelements*namelength*sizeof(char) + 1*sizeof(crystalnetwork);
+	printf("Expected size of crystal is %d\n",size);
+}
+
 void crys_free(crystal *crys)
 {
 	free(crys->species);
@@ -373,6 +381,23 @@ void crys_addAtom(struct crystal *crys, char *element, double x, double y, doubl
 	return atomsthiselement;
 }*/
 
+int crys_elementIndex(crystal *crys, char *element)
+{
+	//Returns the start index of a specific element
+	int elementtype;
+	
+	for(elementtype=0;elementtype<crys->numElements;elementtype++)
+	{
+	//printf("Comparing elements %s and %s\n",element,crys->elements+elementtype*namelength);
+	if(!strcmp(element,crys->elements+elementtype*namelength))
+	//break;
+	return elementtype;
+	}
+	
+	printf("element %s not found in list\n",element);
+	return -1;
+}
+
 int crys_elementOffset(crystal *crys, char *element)
 {
 	//Returns the start index of a specific element
@@ -388,6 +413,16 @@ int crys_elementOffset(crystal *crys, char *element)
 	}
 	
 	return crys_elementOffset;
+}
+
+void crys_elementBoundsArray(crystal *crys, int *offsetArray)
+{
+	int iEle;
+	*offsetArray=0;
+	for(iEle=0;iEle<crys->numElements;iEle++)
+	{
+		*(offsetArray+iEle+1) = *(offsetArray+iEle) + *(crys->totalEachSpecies+iEle);
+	}
 }
 
 int crys_elementCount(crystal *crys, char *element)

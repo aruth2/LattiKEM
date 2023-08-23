@@ -6,9 +6,9 @@
 
 crystal * perovskite_positiveLayer(char *element1,char *element2, double a)
 {
-	/*************************************************************************************/
-	/* Creates an AX layer of a cubic perovskite structure
-	/*************************************************************************************/
+	/*************************************************************************************
+	* Creates an AX layer of a cubic perovskite structure
+	*************************************************************************************/
 	//printf("making a positive layer with elements %s %s\n",element1,element2);
 	crystal *base = malloc(sizeof(crystal));
 	base->numElements = 2;
@@ -40,10 +40,10 @@ crystal * perovskite_positiveLayer(char *element1,char *element2, double a)
 
 crystal * perovskite_negativeLayer(char *element1,char *element2, char *element3, double a)
 {
-	/*************************************************************************************/
-	/* Creates a BX2 layer of a cubic perovskite structure. Seperate elements can be
+	/*************************************************************************************
+	 * Creates a BX2 layer of a cubic perovskite structure. Seperate elements can be
      * chosen for the two different X-sites 
-	/*************************************************************************************/
+	*************************************************************************************/
 	//printf("making a negative layer with %s, %s, and %s\n",element1,element2,element3);
 	crystal *base = malloc(sizeof(crystal));
 	base->numElements = 2;

@@ -271,19 +271,47 @@ void combination(int* c,int n,int p, int x){
     c[p-1] = c[p-2] + x - k;
 }
 
-void readInt(FILE *infile, char *descriptor, int *value)
+void clipComments(char *string, char *commentFlags)
+{
+	if(commentFlags == NULL)
+		return;
+		
+	int iChar;
+	char *match;
+	for (iChar=0;iChar<strlen(commentFlags);iChar++)
+	{
+		if ((match = strchr(string,*(commentFlags+iChar))) != NULL)
+			*(match) = '\0';
+	}
+}
+/*
+void clipComments(char *string, char *commentFlags)
+{
+	if(commentFlags == NULL)
+		return;
+		
+	int iChar, iMatch;
+	for (iChar=0;iChar<strlen(commentFlags);iChar++)
+	{
+		if ((iMatch = strchr(string,*(commentFlags+iChar))) != NULL)
+			*(string+iMatch) = '\0';
+	}
+}*/
+
+void readInt(FILE *infile, char *descriptor, int *value, char *commentFlags)
 {
     char buffer[1000];
     if(strip(infile,descriptor,buffer,"= ",1,1))
     printf("Nothing found for %s using default value of %d\n",descriptor,*value);
     else
     {
+	clipComments(buffer,commentFlags);
     *value = atoi(buffer);
 	printf("%s is %d\n",descriptor,*value);
 	}
 }
 
-void readString(FILE *infile, char *descriptor, char *value)
+void readString(FILE *infile, char *descriptor, char *value, char *commentFlags)
 {
     char buffer[1000];
     strcpy(buffer,"");
@@ -293,18 +321,20 @@ void readString(FILE *infile, char *descriptor, char *value)
 	}
     else
     {
+	clipComments(buffer,commentFlags);
     printf("%s is %s\n",descriptor,buffer);
     strcpy(value,buffer);
 	}
 }
 
-void readDouble(FILE *infile, char *descriptor, double *value)
+void readDouble(FILE *infile, char *descriptor, double *value, char *commentFlags)
 {
     char buffer[1000];
     if(strip(infile,descriptor,buffer,"= ",1,1))
     printf("Nothing found for %s, using default value of %g\n",descriptor,*value);
     else
     {
+	clipComments(buffer,commentFlags);
     *value = atof(buffer);
     printf("%s is %g\n",descriptor,*value);
 	}
@@ -649,4 +679,21 @@ double *unit(int num)
 	for(i=0;i<num;i++)
 	*(array+i)=1;
 	return array;
+}
+
+void  SetBit( uint32_t A[],  int k )
+{
+    A[k/32] |= 1 << (k%32);  // Set the bit at the k-th position in A[i]
+}
+
+int TestBit( uint32_t A[],  int k )
+{
+    return ( (A[k/32] & (1 << (k%32) )) != 0 );     
+}
+int roundup(int number, int multiplicity)
+{
+	if(number % multiplicity == 0)
+	return number;
+	else
+	return (number/multiplicity+1)*multiplicity;
 }

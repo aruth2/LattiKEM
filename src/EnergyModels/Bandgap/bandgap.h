@@ -2,7 +2,7 @@
 #define _BANDGAP_H_
 
 #include "lattikem.h"
-
+//#include "GPUCluster.h"
 //numOpticsEnergies can have a major impact on performance for small systems with breakpoints=all or breakpoints=bias
 //#define numOpticsEnergies 1000
 
@@ -26,6 +26,7 @@ typedef struct OptoelectronicState{
 } OptoelectronicState;
 
 enum bandgapStates {LIGHT_OFF, LIGHT_ON};
+enum bandgapGPU {GPU_OFF, GPU_ON};
 enum thermalDistributions {BOLTZMANN_DISTRIBUTION,FERMI_DISTRIBUTION};
 
 void absorptionshoulder(double broadeningenergy, double Eb, double *shoulder, double *shoulderenergies, double *shoulder_llimit, double *shoulder_ulimit);

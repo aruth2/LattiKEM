@@ -9,13 +9,13 @@
 
 void matrixmultiplication(double *output, double *leftmatrix, double *rightmatrix, int m, int n, int o)
 {
-	/**********************************************/
-	/* multiplies a mxn matrix by a nxo matrix    */
-	/* it is safe for output and rightmatrix to be*/
-	/* the same or output and leftmatrix to be the*/
-	/* same.
-	/*
-	/**********************************************/
+	/**********************************************
+	 * multiplies a mxn matrix by a nxo matrix    *
+	 * it is safe for output and rightmatrix to be*
+	 * the same or output and leftmatrix to be the*
+	 * same.
+	 *
+	 **********************************************/
 	
 	int im,in,io;
 	double *values = malloc(m*o*sizeof(double));

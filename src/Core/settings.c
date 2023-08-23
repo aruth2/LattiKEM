@@ -1,5 +1,7 @@
 #include "settings.h"
 
+char *commentFlags = "!@#$%^&*`~';:";
+
 int **intSettings;
 char **intDescriptors;
 int *intDefaults;
@@ -121,20 +123,20 @@ void loadSettings(FILE *settingsFile)
 	
 	int i,j;
 	for(i=0;i<numIntSettings;i++)
-		readInt(settingsFile,*(intDescriptors+i),*(intSettings+i));
+		readInt(settingsFile,*(intDescriptors+i),*(intSettings+i),commentFlags);
 	for(i=0;i<numDoubleSettings;i++)
-		readDouble(settingsFile,*(doubleDescriptors+i),*(doubleSettings+i));
+		readDouble(settingsFile,*(doubleDescriptors+i),*(doubleSettings+i),commentFlags);
 		
 		
 	for(i=0;i<numStringSettings;i++)
-		readString(settingsFile,*(stringDescriptors+i),*(stringSettings+i));
+		readString(settingsFile,*(stringDescriptors+i),*(stringSettings+i),commentFlags);
 	
 	char stringBuffer[1000];
 	int enumFound;
 	for(i=0;i<numEnumSettings;i++)
 	{
 		strcpy(stringBuffer,*(*(enumSelectors+i)+**(enumSettings+i)));
-		readString(settingsFile,*(enumDescriptors+i),stringBuffer);
+		readString(settingsFile,*(enumDescriptors+i),stringBuffer,commentFlags);
 		enumFound = 0;
 		for(j = 0; j<*(enumSizes+i); j++)
 		{
