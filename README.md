@@ -25,7 +25,7 @@ If you work on any project using LattiKEM, we ask that you please fork a branch 
 Many of the core ideas of LattiKEM originated in an earlier publication on disintegration of a graphene oxide lattice, however almost all of the code was rewritten: https://doi.org/10.1038/ncomms14521
 
 Notably, a significant part of the algorithms used in LattiKEM were reproduced in https://doi.org/10.1021/acsaem.1c00707 
-Yet to be implemented accelerations were made in some of the core algorithms in https://research.tue.nl/en/studentTheses/kmc-modelling-of-light-induced-halide-segregation-in-perovskite-s 
+New accelerations were made to some of the core algorithms in https://research.tue.nl/en/studentTheses/kmc-modelling-of-light-induced-halide-segregation-in-perovskite-s These accelerations are yet to be implemented in LattiKEM.
 
 
 
