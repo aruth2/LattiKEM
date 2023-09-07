@@ -42,6 +42,8 @@ Run the program by passing it a settings file. Here we will use the Examples/mix
 src/Executables/mixedhalide Examples/mixedhalide/medium_fewsteps_4runs
 ```
 
+Further information on the "bandgap" energy model and the "mixedhalide" executable can be found here: https://github.com/aruth2/LattiKEM/tree/main/src/EnergyModels/Bandgap  
+
 The program should run through stages: 
 1. Loading settings
 2. Initializing administrator and worker threads
