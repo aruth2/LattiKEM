@@ -68,7 +68,7 @@ The settings were organized to emphasize the most-performance critical settings 
 
 Here the modules and their purpose are listed. They are organized from the deepest core modules to the most high level modules. All core modules are compiled into the Executables, but only modules within the same EnergyModel are compiled together.
 
-### Core:
+### Core: https://github.com/aruth2/LattiKEM/tree/main/src/Core
 1. **supp.c** - based support functions, list manipulations, string manipulations, and some basic math
 2. **matrix.c** - a few basic matrix operations.
 3. **settings.c** - loads the settings for all modules from a single settings file, also assigns default values.
