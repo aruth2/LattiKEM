@@ -8,11 +8,6 @@ LattiKEM has been used privately from 2016-2023 for a series of journal articles
 
 We have made it a priority to release LattiKEM to the public in time for two publications in 2023. As this is the first release, there most certainly will be bugs, errors, and omissions and the documentation is lacking. Please be patient as we work towards filling in the details. 
 
-# Contributing to LattiKEM
-
-If you have any requests for features or any questions including anything which should be covered in the documentation, but is not there, please add an "Issue" on Github, describe the problem as best you can, and we will work to address it. You should get a response within 24 hours for any new issues.
-
-If you work on any project using LattiKEM, we ask that you please fork a branch and provide your working code there. The code you write can be incorporated into LattiKEM and help future researchers. The model we would like to use is that prototyping is done within the "Energy Models", and that resuable pieces are subsequently migrated into the "Core".
 
 # Publications that used LattiKEM
 
@@ -27,6 +22,11 @@ Many of the core ideas of LattiKEM originated in an earlier publication on disin
  - Notably, a significant part of the algorithms used in LattiKEM were reproduced in https://doi.org/10.1021/acsaem.1c00707 
  - New accelerations were made to some of the core algorithms in https://research.tue.nl/en/studentTheses/kmc-modelling-of-light-induced-halide-segregation-in-perovskite-s These accelerations are yet to be implemented in LattiKEM.
 
+# Contributing to LattiKEM
+
+If you have any requests for features or any questions including anything which should be covered in the documentation, but is not there, please add an "Issue" on Github, describe the problem as best you can, and we will work to address it. You should get a response within 24 hours for any new issues.
+
+If you work on any project using LattiKEM, we ask that you please fork a branch and provide your working code there. The code you write can be incorporated into LattiKEM and help future researchers. The model we would like to use is that prototyping is done within the "Energy Models", and that resuable pieces are subsequently migrated into the "Core".
 
 
 ## Getting started
