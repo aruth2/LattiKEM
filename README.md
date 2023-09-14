@@ -14,7 +14,7 @@ We have made it a priority to release LattiKEM to the public in time for two pub
  - 2018 https://doi.org/10.1021/acsenergylett.8b01369 Vacancy-Mediated Anion Photosegregation Kinetics in Mixed Halide Hybrid Perovskites: Coupled Kinetic Monte Carlo and Optical Measurements
  - 2021 https://doi.org/10.1021/acsenergylett.1c00790 Distinguishing models for mixed halide lead perovskite photosegregation via terminal halide stoichiometry
  - 2022 https://doi.org/10.1021/acsnano.2c10781 Excitation Intensity- and Size-Dependent Halide Photosegregation in CsPb(I0.5Br0.5)3 Perovskite Nanocrystals
- - 2023 In Prep A thermodynamic band gap model for photoinduced phase segregation in mixed-halide perovskites
+ - 2023 https://pubs.acs.org/doi/10.1021/acs.jpcc.3c04708 Thermodynamic Band Gap Model for Photoinduced Phase Segregation in Mixed-Halide Perovskites
  - 2023 In Prep Modeling the Photoelectrochemical Evolution of Lead-based, Mixed-halide Perovskites due to Photosegregation
 
 Many of the core ideas of LattiKEM originated in an earlier publication on disintegration of a graphene oxide lattice, however almost all of the code was rewritten: https://doi.org/10.1038/ncomms14521
