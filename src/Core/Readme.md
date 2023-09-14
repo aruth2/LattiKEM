@@ -1,3 +1,6 @@
+## Core Libraries of LattiKEM
+This document is a guide for those who wish to create their own Energy Model in LattiKEM. This is a difficult undertaking that requires understanding what the core functionality of LattiKEM will provide and what the programmer must provide in order to simulate the energy model. Learning how to use an existing energy model is a much easier task, and each of them provides their own self-contained guides.
+
 # Primary Libraries
  - [Crystal](#crystal)
  - [Crystal Network](#crystal-network)
@@ -279,15 +282,75 @@ void startWorkerThreadPool(int numthreads, Trajectory *newtraj, int newNumTrajec
 void traj_parallelInitialization(Trajectory *trajectories, int numRuns, int maxThreads, char *dir, int jobType);
 ```
 
-# LattiKEM
+## LattiKEM
+The LattiKEM module performs a Markov-Chain Monte Carlo simulation of ion migration on a lattice using either the kinetic Monte Carlo or Metropolis Monte Carlo algorithms. 
+The LattiKEM module provides a range of quality of life features to these simulations including: repeating simulations **numRuns** times and combining the results, fault tolerance via saving and loading of simulation state, and exposing 2 levels of thread-based parallelism via calls to pkmc.
+
+# Fault Tolerance, saving and loading trajectories 
+Each running trajectory will be checkpointed every **savePeriod** steps. When the saving is performed all threads must be paused, so saving too frequently will negatively impact runtime. On the other hand, frequent saving can preserve data in the event the program is terminated for any reason. LattiKEM is generally highly fault tolerant because the amount of data that needs to be preserved is minimal. This data only consists of the initial crystal structure, the ion swaps performed at each step, and time series data including the energy, time, and time step.
+The settings and simulation-wide data is stored in the highest level directory given by the **dir** variable. Each trajectory is stored in its own subdirectory using a three digit zero-indexed name. The trajectory will have an “initial.xyz” file, a “moves” file, an “energy” file, and files for each type of **seriesData** defined for the energy model. For example, the bandgap module describes photocarrier energy and interatomic energy as series data. 
+
+During initialization, the directory for each trajectory is examined and previous crystal structures and moves along with their associated time series data are loaded. Each trajectory will then proceed from the last loaded move unless the **startAtStep** setting is provided in which case all trajectories will begin from the specified step. Loading of previous trajectories can be skipped using “job = restart”. Note that changing parameters of the energy model prior to loading previously generated trajectories can create an incompatibility between the trajectories and the expected simulation. Besides the trajectories that were found and loaded, additional trajectories will be created until the total number equals **numRuns**. In this way, additional runs can be added to a simulation and LattiKEM will only process the newly requested trajectories.
+
+Each trajectory will be ran until numSteps have completed. The external conditions applied to the simulation during each step are defined within the corresponding energy models. Note that at present, the Metropolis Monte Carlo option has been disabled so only “hopMode = kinetic” should be used.
 
 
+# Post Processing
+Both the simulation and the trajectories may have additional data associated with specific steps or step ranges and these data are stored in the “/traj” directories. The “/traj” directories are for larger files that are created during post processing. If “saveCrys = 1”, a .xyz file will be generated for every step of the zeroth trajectory in the “000/traj” directory. This can use an enormous amount of disk space. The bandgap module stores spectra and spatially-distributed charge carrier density in the “/traj” directories.  
+Multiple trajectories are averaged during post processing to produce the response of the simulation. This averaging is only performed if “saveData=1”. The energy model is called to calculate “Configurations” at specific steps of specific trajectories. The energy model must provide a function to the latticeDynamics module which performs weighted averaging of “Configurations”. The trajectories can be averaged using either step-based alignment using “averagingMethod=step” or time-based alignment using “averagingMethod=time”. The number of steps which are combined to produce response data in the /traj directories is given by **averagingSteps** 
+
+In step-based alignment, the averaged trajectory at each step is simply the weighted average of each constituent trajectory at the same corresponding step. Step-based alignment is simple to use, however it is not fully consistent with the macroscopic view providing by the kinetic Monte Carlo method. This is because KMC associates a time with each step, and the amount of time between steps is variable. Therefore, LattiKEM also provides the time-based averaging method. In the time-based averaging method, first the times for the trajectories are shifted so that the step given by “equivocationStep” is time zero. This provides a means to align the trajectories with a change in the external conditions of the simulation such as the flipping of a switch or turning on a light. 
+Next, the time series from the trajectory with the greatest timespan is used as the basis to construct an effective average trajectory. The timeseries of each trajectory is compared to the basis time series so that the two steps surrounding the targeted time are identified and each Configuration is calculated and weights are generated for linear interpolation. This process is repeated for every trajectory and the results are averaged giving equal total weight to each trajectory. Finally, the steps of the effective average trajectory are averaged by **averagingSteps**. 
+
+# Listing of all functions in the LattiKEM module:
+```
+void saveTrajectoryCrystals(Trajectory *traj);
+void performTrajectory(Trajectory *traj);
+void simulateTrajectories();
+void stepAverage(Trajectory *trajectories);
+void timeAverage(Trajectory *trajectories);
+void postProcess(Trajectory *trajectories);
+void lattikem_registerSettings();
+void lattikem_startupMessage();
+char *getDir();
+```
 
 # Support
 
 # Matrix
 
-# Settings
+## Settings
+The settings module implements a single settings file for loading of all global settings in modules compiled together with LattiKEM. Each setting should be defined globally within the .c file of corresponding module and registered with the settings module during runtime. 
+
+Before registering the first setting, the allocateSettings() function should be called to create internal space for the settings module.
+
+Registering a setting consists of calling the register function of the appropriate data type, passing it a descriptive name which will be used to identify the setting within the settings file, passing a pointer to the settings variable, and providing a default value for the setting variable. 
+
+Registering an enum type additionally requires providing the number of different options available and descriptive names for each option. During loading the enum type will be used to fill an integer value into the associated settings variable enumerated from the descriptive names. 
+
+Once all settings have been registered, the loadSettings(FILE *filename) function should be called passing in the settings file. Then all settings variables from all modules will be loaded simultaneously. If a setting is listed multiple times in the settings file, only the first instance will be used.
+
+The settings can be saved using the saveSettings(FILE *filename) function. Saving the settings in the same directory as the output of a simulation is good practice for ensuring repeatability of a simulation. Only settings which differ from their default values will be saved unless the setting saveDefaults = 1 is included in the input settings file. 
+
+The settings module allows for comments in the settings file. All text after any of the characters "!@#$%^&*`~';:" will be treated as a comment. These characters cannot be used in the descriptor for any settings variable. 
+
+# Example implementation of the settings module from lattikem.c
+In the preamble of the lattikem.c file, the savePeriod setting is defined globally:
+    int savePeriod;
+In the lattiekem_registerSettings() function, the savePeriod settings variable is registered using a descriptor of “savePeriod” and a default value of 1000:
+    registerInt(&savePeriod,"savePeriod",1000);
+
+# Listing of all functions in the settings module:
+```
+void allocateSettings();
+void registerInt(int *pointer, char *descriptor, int defaultValue);
+void registerDouble(double *pointer, char *descriptor, double defaultValue);
+void registerString(char *pointer, char *descriptor, char *defaultValue);
+void registerEnum( int num, int *pointer, char *descriptor, int defaultValue,  ... );
+void loadSettings(FILE *settingsFile);
+void saveSettings(FILE *settingsFile);
+```
+
 
 # Source Control
 
