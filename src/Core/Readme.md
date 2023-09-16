@@ -134,9 +134,143 @@ void cn_allocatedSize(crystal *crys);
 ```
 
 # Lattice Dynamics
+The Lattice Dynamics module is the single most important module for building a new energy model. The lattice dynamics module must be passed pointers to functions from the energy model during initialization. The lattice dynamics module will then call these functions itself at appropriate stages of the simulation.
+The lattice dynamics module defines 4 structures which are utilized to describe the evolution of a lattice. The “Configuration” structure is an overloaded crystal additionally containing a data packet that describes the output of Energy Model with respect to the crystal.  
+```
+typedef struct Configuration{
+    crystal *crys;
+    int savedata;
+    char dataFileName[1000];
+    char crysFileName[1000];    
+    double energy;
+    void *data;
+    int enthalpyState;//0 means no energy biasing is used. 
+    double *externalConditions;//A double precision number which is passed to determine how the energy is calculated. //E.g. this could be an applied voltage
+    //Series data is a double precision number for each configuration. These are outputs from the energy model. 
+    //These are attached to the trajectory and saved by the trajectory itself
+    double *seriesData;
+} Configuration;
+```
 
-Dynamic processes in the crystal are managed by the lattice dynamics module. The lattice dynamics module provides means for associating changes in energy with specific moves that could be made in the lattice. At present, the only allowed moves are a swap betweeen two adjacent atoms on the lattice. 
+The energy model must define an “energyFunction” which takes as an argument a “Configuration” and returns the energy of the configuration in electron volts. The definition of the energy function is below.
+    double (*energyFunction)(Configuration *);
+An example of grabbing the crystal and casting the data packet from the “Configuration” inside an energyFunction is given below from the “bg_energy” function of the bandgap Energy Model. The data packet used by the bandgap module is a struct called “OptoelectronicState”. In addition to computing the energy of the crystal, the energyFunction must set config->energy, and return the energy. 
+```
+double bg_energy(Configuration *config)
+{
+	crystal *crys = config->crys;
+	OptoelectronicState *data = config->data;
+	double currentExcitations =  *(config->externalConditions+0);
+	double energy;
+// Code to calculate the energy of the crystal
+if(config->savedata)
+{
+//Calculate emission and absorption spectra
+}
+*(config->seriesData+0) = OS->fermiEnergy;
+*(config->seriesData+1) = OS->photocarrierEnergy;
+*(config->seriesData+2) = OS->interatomicEnergy;
 
+	config->energy = energy;
+	return energy;
+}
+```
+The energyFunction optionally may utilize the “savedata” flag to separate calculations of just the energy versus calculations containing additional properties of the system. Lattice Dynamics will call the energyFunction for both canonical structures which are part of the trajectory and noncanonical structures which are being considered as possible moves. Additionally, the data packet is only saved during post processing – not during the trajectory. The “savedata” flag therefore is set only during post processing.
+
+
+
+seriesData are however saved during the trajectory. Each seriesData sequence is saved as its own file within the trajectory directory.
+
+In addition to providing an “energyFunction”, the Energy Model must provide other functions for the “Configuration”. These include a function for allocating the data packet, a function for freeing the data packet, a function for saving the data packet, and a function for weighted averaging of data packets. We plan to simplify this process in the future so that the energy model need only define the data packet to the Configuration module and thereafter the Configuration module can handle these 4 functions. 
+
+The energy model must also implement a function for generating a “trajectory” object. The trajectory object defines the external conditions applied to the system at each step of the simulation. In this way it encapsulates an experiment. Properties of the system at each step are stored within the trajectory object. The trajectory object also stores the information for constructing the crystal network from the crystal (a nearestNeighborDescriptor object) and the allowed means for evolving the crystal (a LatticeDynamics object). It also stores kinetic information including the time and total energy at each step of the evolution.
+The trajectory object is defined below:
+```
+typedef struct Trajectory{	
+    int step;    
+    int numExternalConditions;
+    int iTraj;
+    double *energies;	
+    //Breakpoints are when data is saved
+    //They have become obsolete and will be removed in the future.
+    int *breakpoints;
+    int numbreakpoints;
+    double *timeseries;
+    double *timeSteps;
+    double *externalConditions;
+    //Series data is a double precision number for each configuration. 
+    //These are attached to the trajectory and saved by the trajectory itself
+    double *seriesData;
+    int numSeriesData;
+    char **seriesDataNames;
+    char *dir;
+    int *selectedMoves;    
+    MarkovChainMonteCarlo *mcmc;
+    LatticeDynamics *LD;
+    NearestNeighborDescriptor nnd[maxnnds];
+    int numnnds;
+    crystal *crys;
+    //This is only used in metropolis
+    int numrejectedhops;
+    int state;
+    int willBeLoaded;
+} Trajectory;
+```
+
+A trajectory generator for the mixed halide executable is shown below
+```
+void mh_trajectory(Trajectory *traj)
+{
+  	LatticeDynamics *LD = traj->LD = malloc(sizeof(LatticeDynamics));
+	int numSteps = getNumSteps();
+	traj->numExternalConditions=1;//Number of carriers
+traj->externalConditions=malloc(1*numSteps * sizeof(double));
+    	
+   	Int iStep;
+	for(iStep =0;iStep<numSteps;iStep++)
+		if(iStep < biasTurnOn)
+			*(traj->externalConditions+traj->numExternalConditions*iStep+0) = 0; //Initial step
+		else
+			if(iStep >= biasTurnOn && iStep < biasSwitch)
+				*(traj->externalConditions+traj->numExternalConditions*iStep+0) = numExcitations; //Turn on Light
+		else
+			*(traj->externalConditions+traj->numExternalConditions*iStep+0) = numExcitationsSecondStep; //Switch to second intensity (e.g. turn off)
+	
+	
+	traj->numSeriesData=3;
+	traj->seriesData=calloc(traj->numSeriesData*numSteps,sizeof(double));	
+	traj->seriesDataNames = malloc(traj->numSeriesData*sizeof(char *));
+	*(traj->seriesDataNames) = "Efermi";	
+	*(traj->seriesDataNames+1) = "photocarrierEnergy";	
+	*(traj->seriesDataNames+2) = "interatomicEnergy";
+	
+	LD->numHopPairs = 2;
+	LD->hopPairs = crys_elementString(4,VX,"Br",VX,"I");	
+	LD->hopPairEnergies = malloc(2*sizeof(double));
+	
+	*(LD->hopPairEnergies) = brHopEnergy; //Br
+	*(LD->hopPairEnergies+1) = iHopEnergy; //I
+	 
+   	traj->crys = mh_crystal();
+     
+	(traj->nnd)->nndistance=0.75*latticeConstant;
+	(traj->nnd)->elementList=crys_elementString(4,"Pb","I","Br",VX);
+	(traj->nnd)->numEle=4;
+	traj->numnnds=1;
+}
+```
+
+The trajectory generator for the mixedhalide executable provides the following definitions (1) The external conditions (the number of photocarriers in the cell) is defined for every step. (2) The seriesData are defined and named. (3) Possible moves to evolve the lattice are defined, they are a swap of a halide vacancy and an iodine atom and a swap of a halide vacancy and a bromine atom. An energy barrier is provided for each move. (4) It creates an initial crystal for the trajectory at step 0 (5) A description of how to create the crystal network is provided. Any atoms of “Pb”, “I”, “Br”, or “VX” can form a link to other atoms of that list so long as they are within ¾ of the lattice constant. We note that although the Pb site and the X site are bonded, only moves within the X-site sublattice are allowed because only swaps involving “I”, “Br”, and “VX” were defined in the LatticeDynamics structure. 
+
+Following definition of all of the necessary functions. The Energy Model should pass pointers to these functions by calling the LD_setup function. The definition of “LD_setup” is below:
+
+```
+void LD_setup(double (*newEnergyFunction)(Configuration *), void (*newSavingFunction)(Configuration *), void (*newbreakpoint_allocator)(void *),
+ void (*newbreakpoint_freer)(void *), void (*newAveragingFunction)(Configuration *,int, Configuration *), void (*newWeightedAveragingFunction)(Configuration *,int, Configuration *, double *), 
+ void (*newtraj_generator)(Trajectory *), int newDataSize);
+```
+
+Dynamic processes in the crystal are managed by the lattice dynamics structure. The lattice dynamics structure provides means for associating changes in energy with specific moves that could be made in the lattice. At present, the only allowed moves are a swap between two adjacent atoms on the lattice. 
 Pairwise elemental energy barriers are defined in the lattice dynamics structure:
 
 ```
@@ -149,102 +283,74 @@ typedef struct LatticeDynamics{
 } LatticeDynamics;
 ```
 
-The lattice dynamics module provides means for enumerating and comparing different possible moves. The structure responsible for this is called "MarkovChainMonteCarlo". MarkovChainMonteCarlo is defined in latticedynamics.h:
+The lattice dynamics module provides means for enumerating and comparing different possible moves. The structure responsible for this is called "MarkovChainMonteCarlo". 
 
 ```
 typedef struct MarkovChainMonteCarlo{
-	
-    int *moves; //List of atom swap pairs
-    double *moveBarriers;
-    int numMoves; 
-    double *moveEnthalpies;
-    
-	int chosenMove;
+int *moves; //List of atom swap pairs
+double *moveBarriers;
+int numMoves; 
+double *moveEnthalpies;
+int chosenMove;
 	double initialenergy;
-	
 	//This is only used in kmc
-    double *moveRates;
-    double *moveProbabilityRanges;
-    double timestep;
-    double rate;
-	
+    	double *moveRates;
+    	double *moveProbabilityRanges;
+    	double timestep;
+    	double rate;
 } MarkovChainMonteCarlo;
 ```
 
-The MCMC object stores the list of all possible moves from the current crystal. It has places for storing the energy differences from each move as well as arrays for the data generated in the kinetic monte carlo algorithm: move rates and probability ranges.
+The MCMC object stores the list of all possible moves from the current crystal. It has arrays for storing the energy differences from each move as well as arrays for the data generated in the kinetic monte carlo algorithm: move rates and probability ranges.
 
-An MCMC object can be initialized from a crystal using a description of possible moves (a LatticeDynamics object) using the LD_list moves function:
+An MCMC object can be initialized from a crystal using a description of possible moves (a LatticeDynamics object) using the LD_listMoves function:
 
-```
 void LD_listMoves(crystal *crys, LatticeDynamics *LD, MarkovChainMonteCarlo *mcmc)
+
+A full list of functions in the lattice dynamics module is below:
+```
+void LD_setup(double (*newEnergyFunction)(Configuration *), void (*newSavingFunction)(Configuration *), void (*newbreakpoint_allocator)(void *),
+ void (*newbreakpoint_freer)(void *), void (*newAveragingFunction)(Configuration *,int, Configuration *), void (*newWeightedAveragingFunction)(Configuration *,int, Configuration *, double *), 
+ void (*newtraj_generator)(Trajectory *), int newDataSize);
+
+void LD_listMoves(crystal *crys, LatticeDynamics *LD, MarkovChainMonteCarlo *mcmc);
+void mcmc_printMoves(crystal *crys, MarkovChainMonteCarlo *mcmc);
+void mcmc_allocate(MarkovChainMonteCarlo *mcmc, int maxMoves);
+
+void config_allocate(Configuration *config, Trajectory *traj);
+void config_free(Configuration *config);
+void config_save(Configuration *config, Trajectory *traj, int step, int maxSteps);
+double config_energy(Configuration *config);
+void config_average(Configuration * configs,int numConfigs, Configuration *outConfig);
+int config_toBeSaved(Configuration *config, Trajectory *traj, int step, int maxSteps);
+void config_savecrys(Configuration *config, Trajectory *traj, int step, int maxSteps);
+
+void traj_registerSettings();
+void traj_logarithmicBreakpoints(Trajectory *traj);
+void traj_allBreakpoints(Trajectory *traj);
+void traj_biasBreakpoints(Trajectory *traj);
+void traj_crysAtStep(crystal *crys, int *usedMoves, int initialStep, int targetStep, int hasNetwork);
+void traj_average(Trajectory *trajectories, int numRuns, Trajectory *outTraj);
+void traj_weightedAverage(Trajectory *trajectories, int numRuns, Trajectory *outTraj, int longestRun);
+void traj_loadSeries(Trajectory *traj);
+int traj_load(Trajectory *traj);
+void traj_saveSeries(Trajectory *traj);
+void traj_free(Trajectory *traj);
+void traj_saveEnergy(Trajectory *traj);
+void traj_loadEnergy(Trajectory *traj);
+void traj_saveMoves(Trajectory *traj);
+void traj_loadMoves(Trajectory *traj);
+void traj_saveSeriesData(Trajectory *traj);
+void traj_loadSeriesData(Trajectory *traj);
+void traj_initialize(Trajectory *traj);
+Trajectory * traj_getSettings();
+void config_weightedAverage(Configuration * configs,int numConfigs, Configuration *outConfig, double *weights);
+void traj_identifySelf(Trajectory *traj, int iTraj, char *dir, int willBeLoaded);
+int getNumSteps();
+int getHopMode();
+double getTemperature();
 ```
 
-In higher level modules, the crystal is passed around as a data packet containing the crystal, external conditions applied to the crystal, and derived properties of the crystal. The structure of this data packet is called "Configuration" and is defined in latticedynamics.h
-
-```
-typedef struct Configuration{
-    crystal *crys;
-    int savedata;
-    char dataFileName[1000];
-    char crysFileName[1000];
-    
-    double energy;
-    void *data;
-    int enthalpyState;//0 means no energy biasing is used. 
-    double *externalConditions;//A double precision number which is passed to determine how the energy is calculated. //E.g. this could be an applied voltage
-    //Series data is a double precision number for each configuration. 
-    //These are attached to the trajectory and saved by the trajectory itself
-    double *seriesData;
-} Configuration;
-```
-
-Finally, the lifetime of the crystal throughout the simulation is described by the "Trajectory" structure. The trajectory structure contains the present information about the crystal's current state as well as past information about what moves were performed to evolve the crystal. It also contains kinetic information including the time and total energy at each step of the evolution.
-
-```
-//A Trajectory object contains a list of all moves performed during simulation.
-//It also describes breakpoints for when data is saved and the steps when external conditions are changed
-//It is started as a thread on the performTrajectory function 
-typedef struct Trajectory{
-	
-    int step;    
-    //int numSteps;
-    int numExternalConditions;
-
-    int iTraj;
-
-    double *energies;
-    //This is used to encode information which gets passed to the energyfunction to describe what energetic terms are used
-    //E.g. turn on/turn off electric field. If the enthalpyState is zero then no enthalpy will be calculated.
-	
-    //Breakpoints are when data is saved
-    //They may become obsolete if a postprocessing utility is made which can quickly produce the data at any step/configuration
-    int *breakpoints;
-    int numbreakpoints;
-
-    double *timeseries;
-    double *timeSteps;
-    double *externalConditions;
-    //Series data is a double precision number for each configuration. 
-    //These are attached to the trajectory and saved by the trajectory itself
-    double *seriesData;
-    int numSeriesData;
-    char **seriesDataNames;
-
-    char *dir;
-    int *selectedMoves;
-    
-    MarkovChainMonteCarlo *mcmc;
-    LatticeDynamics *LD;
-    NearestNeighborDescriptor nnd[maxnnds];
-    int numnnds;
-    
-    crystal *crys;
-    //This is only used in metropolis
-    int numrejectedhops;
-    int state;
-    int willBeLoaded;
-} Trajectory;
-```
 
 # Parallel Kinetic Monte Carlo
 
