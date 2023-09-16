@@ -1,6 +1,8 @@
 ## Core Libraries of LattiKEM
 This document is a guide for those who wish to create their own Energy Model in LattiKEM. This is a difficult undertaking that requires understanding what the core functionality of LattiKEM will provide and what the programmer must provide in order to simulate the energy model. Learning how to use an existing energy model is a much easier task, and each of them provides their own self-contained guides.
 
+The primariy libraries are ordered by their call heirarchy starting from the lowest level. 
+
 # Primary Libraries
  - [Crystal](#crystal)
  - [Crystal Network](#crystal-network)
