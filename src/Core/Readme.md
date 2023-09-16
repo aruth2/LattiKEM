@@ -305,7 +305,7 @@ The MCMC object stores the list of all possible moves from the current crystal. 
 
 An MCMC object can be initialized from a crystal using a description of possible moves (a LatticeDynamics object) using the LD_listMoves function:
 
-void LD_listMoves(crystal *crys, LatticeDynamics *LD, MarkovChainMonteCarlo *mcmc)
+    void LD_listMoves(crystal *crys, LatticeDynamics *LD, MarkovChainMonteCarlo *mcmc)
 
 A full list of functions in the lattice dynamics module is below:
 ```
