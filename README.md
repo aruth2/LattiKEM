@@ -1,13 +1,16 @@
-# LattiKEM v1.0
-## LATTIce chemical Kinetic Evolution Modeling
-Simulate ion migration on a lattice using Kinetic Monte Carlo.  
+## LATTIce chemical Kinetic Evolution Modeling (LattiKEM) v1.0
 
-Welcome to the first official open-source version of LattiKEM! 
+Welcome to the first open-source version of LattiKEM! 
 
 LattiKEM has been used privately from 2016-2023 for a series of journal articles on the photosegregation phenomenon in organic metallic mixed halide perovskites. We considered posting it to the public many times but the code was always in severe need of documentation and as more features were added the barrier to documenting everything became ever greater. The critical moment was when we found out that another research group made their own version of the code around 2021 to verify our results and test some aspects of photosegregation.
 
 We have made it a priority to release LattiKEM to the public in time for two publications in 2023. As this is the first release, there most certainly will be bugs, errors, and omissions and the documentation is lacking. Please be patient as we work towards filling in the details. 
 
+
+# Functionality
+LattiKEM is able to simulate migration and reactions of chemical species on a lattice. The only requirement from the user is to provide a function (*Energy Model*) which can take any configuration of the lattice as an argument and will return the total energy. LattiKEM will then simulate the chemical evolution of a given initial configuration using the Kinetic Monte Carlo (KMC) method. 
+
+While many researchers often write their own Monte Carlo simulations, these typically lack quality of life features which can greatly accelerate the scientific development process. LattiKEM was designed so that an *Energy Model* can be constructed with minimal code and will still enjoy all of the inherent features of LattiKEM. These features include: acceleration of the KMC algorithm through thread-based parallelism, fault tolerance and checkpointing, performing multiple simulations and combining results to quantify stochastic effects, as well as saving, loading, and managing data. 
 
 # Publications that used LattiKEM
 
@@ -15,7 +18,11 @@ We have made it a priority to release LattiKEM to the public in time for two pub
  - 2021 https://doi.org/10.1021/acsenergylett.1c00790 Distinguishing models for mixed halide lead perovskite photosegregation via terminal halide stoichiometry
  - 2022 https://doi.org/10.1021/acsnano.2c10781 Excitation Intensity- and Size-Dependent Halide Photosegregation in CsPb(I0.5Br0.5)3 Perovskite Nanocrystals
  - 2023 https://pubs.acs.org/doi/10.1021/acs.jpcc.3c04708 Thermodynamic Band Gap Model for Photoinduced Phase Segregation in Mixed-Halide Perovskites
- - 2023 In Prep Modeling the Photoelectrochemical Evolution of Lead-based, Mixed-halide Perovskites due to Photosegregation
+ - 2023 https://pubs.acs.org/doi/10.1021/acsnano.3c07165 Modeling the Photoelectrochemical Evolution of Lead-based, Mixed-halide Perovskites due to Photosegregation
+
+An example simulation using LattiKEM from the last publication above is illustrated below. 
+
+https://github.com/aruth2/LattiKEM/assets/8935880/bb96256a-af1b-4944-9e39-662d6c600e1c
 
 Many of the core ideas of LattiKEM originated in an earlier publication on disintegration of a graphene oxide lattice, however almost all of the code was rewritten: https://doi.org/10.1038/ncomms14521
 
@@ -26,10 +33,10 @@ Many of the core ideas of LattiKEM originated in an earlier publication on disin
 
 If you have any requests for features or any questions including anything which should be covered in the documentation, but is not there, please add an "Issue" on Github, describe the problem as best you can, and we will work to address it. You should get a response within 24 hours for any new issues.
 
-If you work on any project using LattiKEM, we ask that you please fork a branch and provide your working code there. The code you write can be incorporated into LattiKEM and help future researchers. The model we would like to use is that prototyping is done within the "Energy Models", and that resuable pieces are subsequently migrated into the "Core".
-
+If you work on any project using LattiKEM, we ask that you please fork a branch and provide your working code there. The code you write can be incorporated into LattiKEM and help future researchers. Prototyping should be performed within the "Energy Models", and resuable pieces are subsequently migrated into the "Core".
 
 ## Getting started
+In order to run simulations of photosegregation in mixed-halide perovskites: 
 Go to the source directory and build the executables
 ```
 make mixedhalide
