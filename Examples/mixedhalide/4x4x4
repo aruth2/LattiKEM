@@ -1,0 +1,10 @@
+dir = ./4x4x4/
+sizex = 4
+sizey = 4
+sizez = 4
+numSteps = 300
+biasTurnOn = 150
+biasSwitch = 200
+numexcitations = 10
+vacancyRatio = 0.01
+job = main

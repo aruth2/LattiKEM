@@ -1,0 +1,11 @@
+sizex = 12
+sizey = 12
+sizez = 12
+hardcodedMaxThreads = 8
+equivocationStep = 15000
+numSteps = 100000
+biasTurnOn = 0
+vacancyRatio = 0.0002
+numExcitations = 100
+dir = ./12x12x12_mediumexcitation/
+job = main

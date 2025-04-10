@@ -1,0 +1,17 @@
+dir = ./refactory/
+numSteps = 25
+numExcitations = 200
+sizex = 12
+sizey = 12
+sizez = 12
+iodineRatio = 0.5               #This is 1-x
+vacancyRatio = 0.005            #0.5 % will result in 25 vacancies 
+brHopEnergy = 0.25              #Eb,Br
+iHopEnergy = 0.25               #Eb,I
+temperature = 0.025             #kT in meV
+numExcitations = 200            #Gives average carrier concentration of 0.115/formula unit
+coordinationNumber = 5          #Cluster size  
+numSteps = 25                   #Number of KMC steps to perform
+numRuns = 4                     #Perform 4 trajectories and average the results
+averagingSteps = 5              #Output will contain spectra for each 5-step window	
+hardcodedMaxThreads = 2         #Distribute load over 2 worker threads. 

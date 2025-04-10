@@ -1,0 +1,9 @@
+dir = ./4x4x4_fullSegregation/
+sizex = 4
+sizey = 4
+sizez = 4
+numSteps = 5000
+biasTurnOn = 150
+numexcitations = 10
+vacancyRatio = 0.01
+job = main
