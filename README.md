@@ -2,7 +2,7 @@
 
 Welcome to the second open-source release of LattiKEM! 
 
-This release realized two substantial performance boosts. (1) We implemented the partial sums method developed by Belois and (2) we produce a GPU version which performs the self-consistent state occupancy using CUDA.
+This release realized two substantial performance boosts. (1) We implemented the partial sums method developed by Belois and (2) we produced a GPU version which performs the self-consistent state occupancy using CUDA.
 
 We have made it a priority to release LattiKEM to the public. As this is the second release, there most certainly will be bugs, errors, and omissions and the documentation is lacking. Please be patient as we work towards filling in the details. 
 
