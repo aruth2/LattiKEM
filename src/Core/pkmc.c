@@ -31,28 +31,52 @@ int nodesPerSocket;
 
 int coreOffset;
 
-int bind_thread_to_core(int core_id) {
-   int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
-   if (core_id < 0 || core_id >= num_cores)
-      return 1;
+int core_number(int threadnumber)
+{
+	
+	int numCores = sysconf(_SC_NPROCESSORS_ONLN);
+	int coresPerSocket = numCores/sockets;
+	int coresPerNode = coresPerSocket/nodesPerSocket;
+	//int socket = (threadnumber+coreOffset)/coresPerSocket;
+	int hyperthread = ((threadnumber+coreOffset) % coresPerNode)/(coresPerNode/hyperthreads);
+	
+	int node = (threadnumber+coreOffset) / (coresPerNode); //the numa node
+	int offset = (threadnumber+coreOffset) % (coresPerNode/hyperthreads);
+	int core_id = offset + node*(coresPerNode/hyperthreads) + hyperthread * (coresPerSocket/hyperthreads);
+	//int core_id = offset + node*(coresPerNode/hyperthreads) +  socket*coresPerSocket + hyperthread * (coresPerSocket/hyperthreads);
+	
+	return core_id;
+}
 
+int bind_thread_to_core(int threadnumber) {
+   
+   int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
+   int core_id = core_number(threadnumber);
+   if (core_id < 0 || core_id >= num_cores)
+   {
+      printf("Thread %d Core id error %d\n",threadnumber,core_id);
+      return 1;
+	}
    cpu_set_t cpuset;
    CPU_ZERO(&cpuset);
    CPU_SET(core_id, &cpuset);
 
-   pthread_t current_thread = pthread_self();    
+   pthread_t current_thread = pthread_self();
+   printf("Bound thread %d to core %d\n",threadnumber,core_id);    
    return pthread_setaffinity_np(current_thread, sizeof(cpu_set_t), &cpuset);
 }
 
 double thread_affinity(int threadnumber){
 	//Returns thread_affinity between 0 and 1 for the relative enumeration of hardware threads.
 	int num_HDW_threads = sysconf(_SC_NPROCESSORS_ONLN);
-	int cores = num_HDW_threads/hyperthreads;
-	return ((double)(threadnumber % cores))/(cores);
+	return (double)(threadnumber+coreOffset)/(num_HDW_threads);
+	//int cores = num_HDW_threads/hyperthreads;
+	//int core_id = core_number(threadnumber);
+	//return ((double)(threadnumber % cores))/(cores);
 }
 
 int get_NUMA_Node(int threadnumber){
-	return sockets * nodesPerSocket * thread_affinity(threadnumber+coreOffset);
+	return sockets * nodesPerSocket * thread_affinity(threadnumber);
 }
 
 void pkmc_registerSettings()

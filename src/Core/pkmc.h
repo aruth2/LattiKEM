@@ -44,4 +44,5 @@ void energyjob(double *energy, int iTraj, int step,int additionalMoveAtom1, int 
 void kineticthread(workerData *wd);
 void startWorkerThreadPool(int numthreads, Trajectory *newtraj, int newNumTrajectories);
 void traj_parallelInitialization(Trajectory *trajectories, int numRuns, int maxThreads, char *dir, int jobType);
+int core_number(int threadnumber);
 #endif
