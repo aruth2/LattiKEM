@@ -116,7 +116,8 @@ __host__ void bindGPU(int threadnumber)
 	
 	int num_gpu;
 	cudaGetDeviceCount(&num_gpu);
-	int iGPU = num_gpu * thread_affinity(threadnumber);
+	int iGPU = num_gpu * (0.999-thread_affinity(threadnumber));//GPUs count in opposite order of NUMA nodes at NERSC
+	printf("Bound thread %d to GPU %d\n",threadnumber,iGPU);
 	cudaSetDevice(iGPU);
 }
 
