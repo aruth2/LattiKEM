@@ -1,0 +1,8 @@
+dir = ./XShells/
+sizex = 30
+sizey = 30
+sizez = 30
+iodineRatio = 1
+vacancyRatio = 0
+calculateLatticeShells = 1
+
