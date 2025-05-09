@@ -18,7 +18,9 @@ double brHopEnergy, iHopEnergy;
 double IBrRepulsiveEnergy;//Energy is per halide atom. If all eight of a I atoms neighbors are Br it will be assessed the full energy, otherwise it will be proportionally lower. 
 double bowingParameter,pureIBandgap,bandgapDifference;
 
-int XLatticeShells[] = {6, 30, 84, 204, 354, 642, 936, 1464, 1950};//The number of X-site anion neighbors surrounding a B-site cation in perovskites up to i shells
+int XLatticeShells[] = {6, 30, 84, 204, 354, 642, 936, 1464, 1950,2790,3516,4740,5754,7434,8784,10992,12726,15534,17700};//The number of X-site anion neighbors surrounding a B-site cation in perovskites up to i shells
+//int repulsiveCoordinationNumber;
+int calculateLatticeShells;
 int	sizex,sizey,sizez;
 int pbcMask;//a 3 bit mask for pbc in x,y and z
 double mh_gapEnergy(int numBandgapAlteringElements, int *numEachElement);
@@ -103,6 +105,64 @@ crystal *mh_crystal()
 	
     return crys;
 }
+
+void MH_XLatticeShells()
+{
+	printf("Calculating size of shells of X lattice\n");
+	Trajectory *traj = malloc(sizeof(Trajectory));
+	mh_trajectory(traj);
+	
+	crystal *crys = traj->crys;
+	cn_allocateCrystalNetwork(traj->crys);
+	for(int innd=0;innd<traj->numnnds;innd++)
+	{
+		cn_printnnd(traj->nnd+innd);
+		cn_fillFromnnd(traj->crys,traj->nnd+innd);
+	}
+	int iNeighbor;
+	int numneighbors;
+	//uint32_t *neighbors = malloc(roundup(crys->totalAtoms,32)/32);
+	uint32_t *neighbors = malloc(1000000*sizeof(uint32_t));
+
+	int iAtom1 = crys_elementOffset(crys, "Pb");
+	/*
+	printf("Num adjacent to atom %d, %d\n",iAtom1,*(crys->network->numAdjacent+iAtom1));
+	int iAdjacent;
+	for(iAdjacent = 0;iAdjacent< *(crys->network->numAdjacent+iAtom1);iAdjacent++)
+		printf("Atom %d\n",*(crys->network->adjacencyList+iAtom1*crys->network->maxconnections+iAdjacent));
+	*/
+	
+	int shellatoms[crys->totalAtoms];
+	int lastshellatoms[crys->totalAtoms];
+	for(iNeighbor=1;iNeighbor<20;iNeighbor++)
+	{
+		//memset(neighbors,0,roundup(crys->totalAtoms,32)/32);
+		memset(neighbors,0,1000000*sizeof(uint32_t));
+		//numneighbors=0;
+		//printf("On atom %d which is %s\n",i+estart,crys->species+(i+estart)*namelength);
+
+		cn_bitA_integratednthNearestNeighbors(crys,crys->network,neighbors,&numneighbors,shellatoms,lastshellatoms,iAtom1,iNeighbor);		
+		//printf("Finished integrated NN\n");
+
+		int iAtom2;
+		int start=crys_elementOffset(crys,"I");
+		int end=start+crys_elementCount(crys,"I");
+		int eleCount = 0;
+		//printf("Counting Neighbors between %d and %d\n",start,end);
+		for(iAtom2=start;iAtom2<end;iAtom2++)
+			eleCount += TestBit(neighbors,iAtom2);
+		
+		start=crys_elementOffset(crys,"Xe");
+		end=start+crys_elementCount(crys,"Xe");
+		//printf("Counting Neighbors between %d and %d\n",start,end);
+		for(iAtom2=start;iAtom2<end;iAtom2++)
+			eleCount += TestBit(neighbors,iAtom2);
+		
+		printf("Shell %d num %d of %d\n",iNeighbor,eleCount,numneighbors);
+	}
+	exit(0);
+}
+
 void mh_registerSettings()
 {
 	//registerString(dir,"dir",".");
@@ -120,6 +180,8 @@ void mh_registerSettings()
     registerInt(&(sizey),"sizey",4);
     registerInt(&(sizez),"sizez",4);
     registerInt(&(pbcMask),"pbcMask",7);
+    registerInt(&(calculateLatticeShells),"calculateLatticeShells",0);
+
     bg_registerSettings();
 }
 
@@ -135,14 +197,14 @@ void mh_setup()
 	//The plan is to gradually expand this functionality so values can be assigned to arbitrary coordination sheels (e.g. nearest neighbor, next-nearest neighbor). 
 	//The code should also allow for an arbitrary number of pairs.
 	//For n repulsive elements, there should be n*(n-1)/2 repulsiveEnergies.
-	int repulsiveShellSize = 8;
-	int maxRepulsiveCoordination = 10;
+	//int repulsiveCoordinationNumber = 8;
+	//int maxRepulsiveCoordination = 10;
 	char *repulsiveElements = crys_elementString(2,"Br","I");
 	double *repulsiveEnergies = &IBrRepulsiveEnergy;
 	int numRepulsiveElements = 2;
 
 	
-	bg_setup(mh_gapEnergy,coordElement,bandgapAlteringElements,numBandgapAlteringElements,XLatticeShells,numStates,repulsiveElements,numRepulsiveElements,repulsiveEnergies,repulsiveShellSize,maxRepulsiveCoordination,mh_trajectory);
+	bg_setup(mh_gapEnergy,coordElement,bandgapAlteringElements,numBandgapAlteringElements,XLatticeShells,numStates,repulsiveElements,numRepulsiveElements,repulsiveEnergies,mh_trajectory);
 }
 
 int main(int argc, char **argv)
@@ -164,6 +226,9 @@ int main(int argc, char **argv)
 
 
 	mh_setup();
+	if(calculateLatticeShells)
+		MH_XLatticeShells();
+		
     simulateTrajectories();
 
 	

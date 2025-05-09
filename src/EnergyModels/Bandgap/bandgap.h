@@ -21,9 +21,12 @@ typedef struct OptoelectronicState{
 	//These are pointers which are used for compact Data copying and saving
 	double **scalars;
 	
-	int *coord;
+	int *BGcoord;
 	//Additional network which has been collapsed.
 	crystalnetwork *bandgapNetwork;
+	
+	int *IAcoord;
+	crystalnetwork *IANetwork;
 	
 	int numScalars;
 	double *fermiEnergy;
@@ -39,16 +42,18 @@ typedef struct OptoelectronicState{
 //enum bandgapGPU {GPU_OFF, GPU_ON};
 enum thermalDistributions {BOLTZMANN_DISTRIBUTION,FERMI_DISTRIBUTION};
 enum pulsedModes { CONSTANT_WAVE, PULSED, CROSSOVER};
+enum interatomicInteraction {IA_NONE, IA_BG_NETWORK, IA_SEPARATE_NETWORK};
 
 void absorptionshoulder(double broadeningenergy, double Eb, double *shoulder, double *shoulderenergies, double *shoulder_llimit, double *shoulder_ulimit);
 void OS_save(Configuration *config);
 void OS_allocate(Configuration *config);
 void OS_free(Configuration *config);
-void OS_energy(crystal *crys,int *coord,Configuration *config);
+void OS_energy(crystal *crys,int *BGcoord,Configuration *config);
 double bg_energy(Configuration *config);
 
-void bg_setup(double newbandgapFunction(int numBandgapAlteringElements, int *numEachElement),char *newcoordElement,char *newbandgapAlteringElements,int newnumBandgapAlteringElements,int *coordinationShells,int newnumStates,
-char *newrepulsiveElements,int newnumRepulsiveElements, double *newrepulsiveEnergies,int newrepulsiveShellSize, int newmaxRepulsiveCoordination,
+void bg_setup(double newbandgapFunction(int numBandgapAlteringElements, int *numEachElement),char *newcoordElement,
+char *newbandgapAlteringElements,int newnumBandgapAlteringElements,int *coordinationShells,int newnumStates,
+char *newrepulsiveElements,int newnumRepulsiveElements, double *newrepulsiveEnergies,
 void traj_generator(Trajectory *traj));
 
 void bg_registerSettings();
@@ -57,6 +62,7 @@ void OS_combineWeighted(Configuration *configs, int numCombine, Configuration *o
 void OS_printCoord(OptoelectronicState *OS);
 double interatomic_energy(Configuration *config);
 void bg_networkSwap(Configuration *config, int atom1, int atom2);
-void bg_coordSwap(Configuration *config, int atom1, int atom2, int forward_reverse);
+void bg_coordSwap(crystal *crys, crystalnetwork *cn, int *coord, int atom1, int atom2, int forward_reverse);
+void bg_partialSwap(Configuration *config, int atom1, int atom2, int forward_reverse);
 double getFermiConvergence();
 #endif
