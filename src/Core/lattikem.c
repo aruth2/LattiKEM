@@ -5,7 +5,7 @@ int numRuns;
 int hardcodedMaxThreads;//If this is set it will override the use of the number of logical cores to determine number of threads.
 int maxThreads;//The maximum number of threads to use in the threadpool. This does not count control threads. Typically the number of logical cores. 	
 //int saveCrys,saveData, saveLightCube;
-int saveCrys,saveData;
+int saveData;
 int jobType;
 int replaceMolecules;
 int savePeriod;
@@ -16,6 +16,11 @@ int equivocationStep;
 int averagingMethod;
 int equivocationMethod;
 
+int saveCrys;
+int saveCrysMode;
+int saveCrysStride;
+int *saveCrysList;
+int numSaveSteps;
 //int lightCubeFrameRepeat;
 //int lightCubeFrameStride;
 
@@ -62,14 +67,18 @@ void lattikem_registerSettings()
 	registerInt(&saveData,"saveData",1);
 	registerInt(&savePeriod,"savePeriod",1000);
 	registerInt(&equivocationStep,"equivocationStep",0);
+	registerInt(&saveCrysStride,"saveCrysStride",1);
+	saveCrysList = registerIntList("saveCrysList",&numSaveSteps);
 	//registerInt(&lightCubeFrameRepeat,"lightCubeFrameRepeat",1);
 	//registerInt(&lightCubeFrameStride,"lightCubeFrameStride",1);
 		
 	registerEnum(6,&jobType,"job",JOB_AUTO,"auto","restart","continue","postProcess","main", "setup");
 	registerEnum(3,&averagingMethod,"averagingMethod", TIME_AVERAGE, "step","time","none");
 	registerEnum(2,&equivocationMethod,"equivocationMethod", STEP_SUM, "stepSum","timeElapsed");
+	registerEnum(2,&saveCrysMode,"saveCrysMode", CRYS_SAVE_STRIDE, "stride","list");
 		
 	traj_registerSettings();
+	
 	
 	//srand(time(0)) should preferably be used for pseudorandom numbers. However, for debugging using a specific value can be helpful.
 	srand(time(0));	
@@ -192,11 +201,15 @@ void postProcess(Trajectory *trajectories)
 {
 	//This only saves the structure of the first run. In the future, this may be updated to combine the crystals.
 	if(saveCrys)
+	{
+		printf("Saving Trajectory Crystals\n");
 		saveTrajectoryCrystals(trajectories);
+	}
 	//if(saveLightCube)
 	//saveTrajectoryLightCube(trajectories);
 	if(saveData)
 	{
+		printf("Saving Trajectory Data\n");
 	if(averagingMethod == STEP_AVERAGE || averagingMethod == NOT_COMBINED)
 		stepAverage(trajectories);
 	if(averagingMethod == TIME_AVERAGE)
@@ -217,7 +230,18 @@ void saveTrajectoryCrystals(Trajectory *traj)
 		traj_crysAtStep(traj->crys,traj->selectedMoves,traj->step,iStep,CN_NO_NETWORK);
 		else
 		traj_crysAtStep(traj->crys,traj->selectedMoves,iStep-1,iStep,CN_NO_NETWORK);
-		config_savecrys(config, traj, iStep, numSteps);
+		switch(saveCrysMode)
+		{
+			case(CRYS_SAVE_STRIDE):
+			if(iStep % saveCrysStride == 0)
+				config_savecrys(config, traj, iStep, numSteps);
+			break;
+			
+			case(CRYS_SAVE_LIST):
+			if(intcontains(saveCrysList,iStep,numSaveSteps))
+				config_savecrys(config, traj, iStep, numSteps);
+			break;	
+		}
 	}
 }
 

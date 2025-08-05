@@ -506,10 +506,10 @@ double interatomic_energy(Configuration *config)
 	if(interatomicMode == IA_NONE)
 		return 0;
 		
-	crystal *crys = config->crys;
-	OptoelectronicState *data = config->data;	
+	//crystal *crys = config->crys;
+	OptoelectronicState *data = (OptoelectronicState *)config->data;	
 	int *coord;
-	int maxConnections;
+	//int maxConnections;
 	int iele1, iele2, iAtom;
 	int numEle1, numEle2;
 	int repulsivePair=0;
@@ -517,13 +517,13 @@ double interatomic_energy(Configuration *config)
 	if(interatomicMode == IA_BG_NETWORK)
 	{
 		coord = data->BGcoord;
-		maxConnections = maxCoordination;
+		//maxConnections = maxCoordination;//Value set but never used
 	}
 	
 	if(interatomicMode == IA_SEPARATE_NETWORK)
 	{
 		coord = data->IAcoord;
-		maxConnections = maxRepulsiveCoordination;
+		//maxConnections = maxRepulsiveCoordination;//Value set but never used
 	}
 	
 	for(iele1=0;iele1<numBandgapAlteringElements-1;iele1++)

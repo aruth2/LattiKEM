@@ -109,7 +109,7 @@ crystal *mh_crystal()
 void MH_XLatticeShells()
 {
 	printf("Calculating size of shells of X lattice\n");
-	Trajectory *traj = malloc(sizeof(Trajectory));
+	Trajectory *traj = (Trajectory *)malloc(sizeof(Trajectory));
 	mh_trajectory(traj);
 	
 	crystal *crys = traj->crys;
@@ -122,7 +122,7 @@ void MH_XLatticeShells()
 	int iNeighbor;
 	int numneighbors;
 	//uint32_t *neighbors = malloc(roundup(crys->totalAtoms,32)/32);
-	uint32_t *neighbors = malloc(1000000*sizeof(uint32_t));
+	uint32_t *neighbors = (uint32_t *)malloc(1000000*sizeof(uint32_t));
 
 	int iAtom1 = crys_elementOffset(crys, "Pb");
 	/*

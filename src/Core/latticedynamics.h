@@ -8,6 +8,7 @@ enum breakpoints {ALL_BREAKPOINTS,LOGARITHMIC_BREAKPOINTS,BIAS_BREAKPOINTS};
 enum trajectoriestate {TRAJECTORY_STATE_FINISHED, TRAJECTORY_STATE_RUNNING};
 enum hopModes {HOP_MODE_METROPOLIS, HOP_MODE_KINETIC};
 
+
 //A LatticeDynamics object describes allowed changes which can be made to a crystal
 typedef struct LatticeDynamics{
     //Describes the allowed moves

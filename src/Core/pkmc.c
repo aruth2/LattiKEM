@@ -203,6 +203,9 @@ void threadwait(int iTraj)
 		retVal = pthread_cond_timedwait(threadwaitcond+iTraj,trajmutex+iTraj,&ts);
 		if(retVal)
 		{
+			if(retVal == 110)
+			printf("Traj %d timedout. This is normal while collapsing the network at the beginning of the run\n",iTraj);
+			else
 			printf("Traj %d errored with retVal %d\n",iTraj,retVal);
 		}
 		//pthread_cond_wait(threadwaitcond+iTraj,trajmutex+iTraj);

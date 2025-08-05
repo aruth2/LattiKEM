@@ -24,6 +24,12 @@ char ***enumSelectors;
 int *enumDefaults;
 int numEnumSettings = 0;
 
+int  **intListSettings;
+int **numIntListValues;
+char **intListDescriptors;
+int numIntListSettings = 0;
+
+
 int saveDefaults;
 void allocateSettings()
 {
@@ -47,16 +53,22 @@ void allocateSettings()
 	enumDescriptors = (char **)calloc(maxSettings,sizeof(char *));
 	enumSelectors = (char ***)calloc(maxSettings,sizeof(char **));
 	
+	intListSettings = (int **)calloc(maxSettings,sizeof(int *));
+	numIntListValues = (int **)calloc(maxSettings,sizeof(int *));
+	intListDescriptors = (char **)calloc(maxSettings,sizeof(char *));
+	
 	for(i=0;i<maxSettings;i++)
 	{
 		*(intDescriptors+i) = (char *)calloc(stringSize,sizeof(char));
 		*(doubleDescriptors+i) = (char *)calloc(stringSize,sizeof(char));
 		*(stringDescriptors+i) = (char *)calloc(stringSize,sizeof(char));
 		*(enumDescriptors+i) = (char *)calloc(stringSize,sizeof(char));
+		*(intListDescriptors+i) = (char *)calloc(stringSize,sizeof(char));
 		
 		*(stringSettings+i) = (char *)calloc(stringSize,sizeof(char));
 
 		*(stringDefaults+i) = (char *)calloc(stringSize,sizeof(char));
+		*(intListSettings+i) = (int *)calloc(maxListSize,sizeof(int));
 		*(enumSelectors+i) = (char **)calloc(maxEnumSize,sizeof(char *));
 		for(j=0;j<maxEnumSize;j++)
 		{
@@ -96,6 +108,18 @@ void registerString(char *pointer, char *descriptor, char *defaultValue)
 	numStringSettings++;
 }
 
+int * registerIntList( char *descriptor, int *numEntriesPointer)
+{
+	int *pointer = (int *)calloc(maxListSize,sizeof(int));
+	*(intListSettings + numIntListSettings) = pointer;
+	*(numIntListValues + numIntListSettings) = numEntriesPointer;
+	strcpy(*(intListDescriptors+numIntListSettings),descriptor);
+	*numEntriesPointer = 0;
+	numIntListSettings++;
+	
+	return pointer;
+}
+
 void registerEnum( int num, int *pointer, char *descriptor, int defaultValue,  ... )
 {
     va_list arguments;                     	
@@ -131,6 +155,9 @@ void loadSettings(FILE *settingsFile)
 	for(i=0;i<numStringSettings;i++)
 		readString(settingsFile,*(stringDescriptors+i),*(stringSettings+i),commentFlags);
 	
+	for(i=0;i<numIntListSettings;i++)
+		readIntList(settingsFile,*(intListDescriptors+i),*(intListSettings+i),*(numIntListValues+i),commentFlags);
+		
 	char stringBuffer[1000];
 	int enumFound;
 	for(i=0;i<numEnumSettings;i++)
@@ -172,5 +199,7 @@ void saveSettings(FILE *settingsFile)
 	for(i=0;i<numEnumSettings;i++)
 		if(**(enumSettings+i) != *(enumDefaults+i) || saveDefaults)
 			saveString(settingsFile,*(enumDescriptors+i),*(*(enumSelectors+i)+**(enumSettings+i)));
-		
+	
+	for(i=0;i<numIntListSettings;i++)
+		saveIntList(settingsFile,*(intListDescriptors+i),*(intListSettings+i), **(numIntListValues+i));	
 }

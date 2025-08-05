@@ -342,6 +342,33 @@ void readString(FILE *infile, char *descriptor, char *value, char *commentFlags)
 	}
 }
 
+void readIntList(FILE *infile, char *descriptor, int *values, int *numValues, char *commentFlags)
+{
+    char buffer[1000];
+    strcpy(buffer,"");
+    if(strip(infile,descriptor,buffer,"= ",1,1))
+    {
+    printf("%s not set\n",descriptor);
+	}
+    else
+    {
+	clipComments(buffer,commentFlags);
+    printf("%s is %s\n",descriptor,buffer);
+    char *token = strtok(buffer,", ");
+    *values = atoi(token);
+    *numValues = 1;
+    
+    while (token != NULL) {
+        *(values+*(numValues)) = atoi(token);
+        *numValues++;
+        //printf(" % s\n", token);
+        token = strtok(NULL, ", ");
+    }
+    printf("%d values in list\n",*numValues);
+    //strcpy(value,buffer);
+	}
+}
+
 void readDouble(FILE *infile, char *descriptor, double *value, char *commentFlags)
 {
     char buffer[1000];
@@ -364,6 +391,16 @@ void saveInt(FILE *outfile, char *descriptor, int value)
 {
     fprintf(outfile,"%s = %d\n",descriptor,value);
 }
+
+void saveIntList(FILE *outfile,char *descriptor,int *values, int numValues)
+{
+	int i;
+	fprintf(outfile,"%s = %d",descriptor,*values);
+	for(i=1;i<numValues;i++)
+		fprintf(outfile,",%d",*(values+i));
+	fprintf(outfile,"\n");
+
+}	
 
 void saveDouble(FILE *outfile, char *descriptor, double value)
 {
