@@ -32,7 +32,7 @@ double weightCutoff;
 //Global settings for interatomic interactions.
 int interatomicMode;  
 char *repulsiveElements;
-double *repulsiveEnergies;
+double **repulsiveEnergies;
 int	numRepulsiveElements;
 int	repulsiveCoordinationNumber;
 int	maxRepulsiveCoordination;
@@ -192,7 +192,7 @@ void OS_combineWeighted(Configuration *configs, int numCombine, Configuration *o
 	
 }
 
-
+#define maxUpdate 10000
 void OS_allocate(Configuration *config)
 {
 	OptoelectronicState *OS = (OptoelectronicState *)config->data;
@@ -217,6 +217,8 @@ void OS_allocate(Configuration *config)
     
     OS->IANetwork = NULL;
 	OS->IAcoord = (int *)calloc(numStates*numBandgapAlteringElements,sizeof(int));
+    
+    OS->BGUpdateList = (int *)calloc(maxUpdate,sizeof(int));
     
     //OS->fermiEnergy=0;
     //Scalars
@@ -324,20 +326,29 @@ void OS_energy(crystal *crys, int *BGcoord,Configuration *config)
     OptoelectronicState *OS = (OptoelectronicState *)config->data;
     //printf("Data is located at %X\n",config->data);
 	int i;
-
-	double lowestenergystate = 10;
-	double highestenergystate = 0;
-	//This should be updated for partial sums. Only those states which change need to be calculated.
+	
+#ifdef __CUDACC__
+	//nvtxRangePushA(":ELEVELS_IN_IND");
+	//int copyElevels = !(OS->numBGUpdate);
+	int copyElevels = 1;
+#endif
+	if((OS->numBGUpdate))//Recalcualte the bandgap for only those energy states that have been altered. 
+	{
+		for(int iUpdate=0;iUpdate<(OS->numBGUpdate);iUpdate++)
+			{
+				i = *(OS->BGUpdateList+iUpdate);
+				*(OS->energystates+i) = bandgapFunction(numBandgapAlteringElements, BGcoord+numBandgapAlteringElements*i);
+#ifdef __CUDACC__
+				//cudaMemcpyAsync(OS->d_energyLevels+i, OS->energystates+i, sizeof(double), cudaMemcpyHostToDevice,0);//Copying one element at a time has been far slower than copying the block even if only a small number are copied.
+#endif
+			}
+	}
+	else
 	for(i=0;i<numcoordinationatoms;i++)
 	{
 		*(OS->energystates+i) = bandgapFunction(numBandgapAlteringElements, BGcoord+numBandgapAlteringElements*i);
-
-        if(*(OS->energystates+i)<lowestenergystate)
-            lowestenergystate=*(OS->energystates+i);
-            
-		if(*(OS->energystates+i)>highestenergystate)
-            highestenergystate = *(OS->energystates+i);
 	}
+	OS->numBGUpdate = 0;
 	//printf("Starting thermal distribution\n");
 	
 	if(thermalDistribution == BOLTZMANN_DISTRIBUTION)
@@ -346,7 +357,7 @@ void OS_energy(crystal *crys, int *BGcoord,Configuration *config)
 		for(i=0;i<numcoordinationatoms;i++)
 		{
 			//By using the middle energy we keep the weights close to 1 to reduce floating point errors.
-			*(OS->weights+i) = exp(-(*(OS->energystates+i) - (highestenergystate+lowestenergystate)/2.0)/temperature);
+			*(OS->weights+i) = exp(-(*(OS->energystates+i) - (optics_ulimit+optics_llimit)/2.0)/temperature);
 			probabilitysum += *(OS->weights+i);
 			//printf("Energy state %g weight %g probability sum %g\n",*(OS->energystates+i),*(OS->weights+i),probabilitysum);
 		}
@@ -367,7 +378,7 @@ void OS_energy(crystal *crys, int *BGcoord,Configuration *config)
 #ifdef __CUDACC__
 		//printf("Calculating Fermi Distribution on GPU\n");
 		int copyWeights = config->savedata || saveChargeDensity;
-		bgg_runKernel(OS, copyWeights, numStates, currentExcitations);
+		bgg_runKernel(OS, copyElevels, copyWeights, numStates, currentExcitations);
 #else
 		//printf("Calculating Fermi Distribution on CPU\n");
 		*(OS->fermiEnergy) =  solveFermiEnergy(currentExcitations, *(OS->fermiEnergy), fermiConvergence, OS->energystates,OS->weights,numcoordinationatoms,temperature,OS->photocarrierEnergy);
@@ -537,7 +548,7 @@ double interatomic_energy(Configuration *config)
 				numEle2 = coord[iAtom*numBandgapAlteringElements+iele2];
 				//This is very close to U * x1 * x2, where x1 and x2 are the fraction of ele1 and ele2.
 				//However, the version below mutes the impact of vacancies.
-				energy += *(repulsiveEnergies+repulsivePair)*numEle1*numEle2/(numEle1+numEle2)/(numEle1+numEle2);
+				energy += **(repulsiveEnergies+repulsivePair)*numEle1*numEle2/(numEle1+numEle2)/(numEle1+numEle2);
 			}
 			repulsivePair++;
 		}
@@ -546,7 +557,7 @@ double interatomic_energy(Configuration *config)
 		
 }
 
-void bg_coordSwap(crystal *crys, crystalnetwork *cn, int *coord, int atom1, int atom2, int forward_reverse)
+void bg_coordSwap(crystal *crys, crystalnetwork *cn, int *coord, int atom1, int atom2, int forward_reverse, int *BGUpdateList, int *numBGUpdate)
 {
 	//1 for forward, -1 to go in reverse and undo a swap.
 	
@@ -576,6 +587,8 @@ void bg_coordSwap(crystal *crys, crystalnetwork *cn, int *coord, int atom1, int 
 	int numatom2neighbors;
 	cn_nearestNeighbors(cn,atom2neighbors,&numatom2neighbors,atom2);
 	int i;
+	
+	//*numBGUpdate = 0;
 	//printf("iEle1 %d iEle2 %d\n",iEle1,iEle2);
 	for(i=0;i<numatom1neighbors;i++)//subtract 1 from the counter for each coordination neighbor of atom 1 of element 1. add 1 from the counter for each coordination neighbor of atom 1 of element 2.
 	{
@@ -587,6 +600,11 @@ void bg_coordSwap(crystal *crys, crystalnetwork *cn, int *coord, int atom1, int 
 			(*(coord+(*(atom1neighbors+i)-estart)*numBandgapAlteringElements+iEle1)) -= forward_reverse;
 			if(iEle2 != -1)
 			(*(coord+(*(atom1neighbors+i)-estart)*numBandgapAlteringElements+iEle2)) += forward_reverse;
+			
+			if(insertionSort(BGUpdateList,*numBGUpdate,*(atom1neighbors+i)-estart) != -1)//This insertion for tracking which BGs need updating appears to be more costly than the time saved.
+				(*(numBGUpdate))++;
+			//*(BGUpdateList + *numBGUpdate) = *(atom1neighbors+i)-estart;//This can double count, but it's faster building the list
+			//(*(numBGUpdate))++;
 		}
 	}
 	for(i=0;i<numatom2neighbors;i++)//subtract 1 from the counter for each coordination neighbor of atom 2 of element 2. add 1 from the counter for each coordination neighbor of atom 2 of element 1
@@ -597,6 +615,13 @@ void bg_coordSwap(crystal *crys, crystalnetwork *cn, int *coord, int atom1, int 
 			(*(coord+(*(atom2neighbors+i)-estart)*numBandgapAlteringElements+iEle2)) -= forward_reverse;
 			if(iEle1 != -1)//Invoked when one atom is a vacancy
 			(*(coord+(*(atom2neighbors+i)-estart)*numBandgapAlteringElements+iEle1)) += forward_reverse;
+			
+			
+			if(insertionSort(BGUpdateList,*numBGUpdate,*(atom2neighbors+i)-estart) != -1)
+				(*(numBGUpdate))++;
+			//*(BGUpdateList + *numBGUpdate) = *(atom1neighbors+i)-estart;//This can double count, but it's faster building the list
+			//(*(numBGUpdate))++;
+				
 		}
 	}
 	//OS_printCoord(data);
@@ -612,12 +637,12 @@ void bg_networkSwap(Configuration *config, int atom1, int atom2)
 	//printf("Memory locations %X %X\n",OS->bandgapNetwork,OS->BGcoord);
 	if(OS->bandgapNetwork != NULL)
 	{
-	bg_coordSwap(config->crys,OS->bandgapNetwork,OS->BGcoord,atom1,atom2,1);//network swap is always forward because the network is updated so performing a second forward swap will undo the first.
+	bg_coordSwap(config->crys,OS->bandgapNetwork,OS->BGcoord,atom1,atom2,1,OS->BGUpdateList,&(OS->numBGUpdate));//network swap is always forward because the network is updated so performing a second forward swap will undo the first.
 	cn_networkSwap(OS->bandgapNetwork,atom1,atom2);
 	}
 	if((OS->IANetwork != NULL) && (interatomicMode == IA_SEPARATE_NETWORK))//The second clause should be redundant. 
 	{
-	bg_coordSwap(config->crys,OS->IANetwork,OS->IAcoord,atom1,atom2,1);//network swap is always forward because the network is updated so performing a second forward swap will undo the first.
+	bg_coordSwap(config->crys,OS->IANetwork,OS->IAcoord,atom1,atom2,1,OS->BGUpdateList,&(OS->numBGUpdate));//network swap is always forward because the network is updated so performing a second forward swap will undo the first.
 	cn_networkSwap(OS->IANetwork,atom1,atom2);	
 	}
 }
@@ -627,11 +652,11 @@ void bg_partialSwap(Configuration *config, int atom1, int atom2, int forward_rev
 	OptoelectronicState *OS = (OptoelectronicState *)config->data;
 	if(OS->bandgapNetwork != NULL)
 	{
-		bg_coordSwap(config->crys,OS->bandgapNetwork,OS->BGcoord,atom1,atom2,forward_reverse);
+		bg_coordSwap(config->crys,OS->bandgapNetwork,OS->BGcoord,atom1,atom2,forward_reverse,OS->BGUpdateList,&(OS->numBGUpdate));
 	}
 	if((OS->IANetwork != NULL) && (interatomicMode == IA_SEPARATE_NETWORK))
 	{
-		bg_coordSwap(config->crys,OS->IANetwork,OS->IAcoord,atom1,atom2,forward_reverse);
+		bg_coordSwap(config->crys,OS->IANetwork,OS->IAcoord,atom1,atom2,forward_reverse,OS->BGUpdateList,&(OS->numBGUpdate));
 	}
 }
 
@@ -655,6 +680,7 @@ double bg_energy(Configuration *config)
 		//printf("Memory locations %X %X %d\n",OS->bandgapNetwork,OS->BGcoord,OS->bandgapNetwork->maxconnections);
 		cn_bitA_clusterApprox(crys, crys->network, coordElement, bandgapAlteringElements, numBandgapAlteringElements, OS->BGcoord, coordinationNumber, OS->bandgapNetwork->maxconnections);
 		//OS_printCoord(data);
+		OS->numBGUpdate = 0;
 	}
 	if((OS->IANetwork == NULL) && (interatomicMode == IA_SEPARATE_NETWORK) )
 	{
@@ -718,7 +744,7 @@ void bg_registerSettings()
 }
 
 void bg_setup(double newbandgapFunction(int numBandgapAlteringElements, int *numEachElement),char *newcoordElement,char *newbandgapAlteringElements,int newnumBandgapAlteringElements,int *coordinationShells,int newnumStates,
-char *newrepulsiveElements,int newnumRepulsiveElements, double *newrepulsiveEnergies,
+char *newrepulsiveElements,int newnumRepulsiveElements, double **newrepulsiveEnergies,
 void traj_generator(Trajectory *traj))
 {
 	shoulder = (double *)malloc(numOpticsEnergies*sizeof(double));

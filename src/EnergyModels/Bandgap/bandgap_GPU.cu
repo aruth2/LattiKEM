@@ -76,15 +76,18 @@ __global__ void fermiKernel(double *energyLevels, double *fermiEnergy, double cu
 	}
 }
 
-__host__ void bgg_runKernel(OptoelectronicState *OS, int copyWeights, int num_states, double currentExcitations)
+__host__ void bgg_runKernel(OptoelectronicState *OS, int copyELevels, int copyWeights, int num_states, double currentExcitations)
 {
 	double temperature = getTemperature();
 	
+	if(copyELevels)
+	{
 	nvtxRangePushA(":ELEVELS_IN");
 	cudaMemcpyAsync(OS->d_energyLevels, OS->energystates, sDATA_SZ, cudaMemcpyHostToDevice,0);
 	//cudaStreamSynchronize(0);
 	nvtxRangePop();
-	
+	}
+
 	nvtxRangePushA(":KERNEL");	
 	fermiKernel<<<1, GPU_threads,0,0>>>(OS->d_energyLevels, OS->d_fermiEnergy,  currentExcitations, getFermiConvergence() , temperature, num_states, OS->d_weights,OS->d_energyWeights,OS->d_energy,OS->d_weightSum);
  	//cudaStreamSynchronize(0);		
@@ -116,8 +119,10 @@ __host__ void bindGPU(int threadnumber)
 	
 	int num_gpu;
 	cudaGetDeviceCount(&num_gpu);
+	
 	int iGPU = num_gpu * (0.999-thread_affinity(threadnumber));//GPUs count in opposite order of NUMA nodes at NERSC
-	printf("Bound thread %d to GPU %d\n",threadnumber,iGPU);
+	printf("Thread number %d Thread Affinity %g GPU %d of %d\n",threadnumber,thread_affinity(threadnumber),iGPU,num_gpu);
+	//printf("Bound thread %d to GPU %d\n",threadnumber,iGPU);
 	cudaSetDevice(iGPU);
 }
 

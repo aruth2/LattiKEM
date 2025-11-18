@@ -324,12 +324,16 @@ void stepAverage(Trajectory *trajectories)
 
 	for(iStepMod=0;iStepMod<averagingSteps;iStepMod++)
 	{
+		(singleStepConfigs+iStepMod)->threadnumber=-1;//Do not bind this thread to a specific core/GPU
 		config_allocate(singleStepConfigs+iStepMod,combinedTrajectory);
 		(singleStepConfigs +iStepMod)->savedata = 1;//Set flag so configs know to record all data that is to be saved/plotted.
 	}			
 	for(iTraj=0;iTraj<numRuns;iTraj++)
+	{
+		(stepAveragedConfigs+iTraj)->threadnumber=-1;//Do not bind this thread to a specific core/GPU
 		config_allocate(stepAveragedConfigs+iTraj,trajectories+iTraj);
-		
+	}
+	runAveragedConfig->threadnumber=-1;//Do not bind this thread to a specific core/GPU	
 	config_allocate(runAveragedConfig,combinedTrajectory);
 		
 	
@@ -458,20 +462,24 @@ void timeAverage(Trajectory *trajectories)
 	combinedTrajectory->step=trajectories->step;
 
 	for(iStepMod=0;iStepMod<averagingSteps;iStepMod++)
+	{
+		(timeAveragedConfigs+iStepMod)->threadnumber=-1;//Do not bind this thread to a specific core/GPU	
 		config_allocate(timeAveragedConfigs+iStepMod,combinedTrajectory);
-				
+	}			
 	for(iTraj=0;iTraj<numRuns;iTraj++)
 		{
 			for(iStepMod=0;iStepMod<averagingSteps;iStepMod++)
 			{
 			iConfig = 2*iTraj+2*numRuns*iStepMod;
+			(singleStepConfigs+iConfig)->threadnumber=-1;//Do not bind this thread to a specific core/GPU
+			(singleStepConfigs+iConfig+1)->threadnumber=-1;//Do not bind this thread to a specific core/GPU
 			config_allocate(singleStepConfigs+iConfig,trajectories+iTraj);
 			config_allocate(singleStepConfigs+iConfig+1,trajectories+iTraj);
 			(singleStepConfigs+iConfig)->savedata = 1;//Set flag so configs know to record all data that is to be saved/plotted.
 			(singleStepConfigs+iConfig+1)->savedata = 1;
 			}
 		}
-		
+	(runAveragedConfig)->threadnumber=-1;//Do not bind this thread to a specific core/GPU
 	config_allocate(runAveragedConfig,combinedTrajectory);
 	
 	//The series data appears to get messed up by the energy jobs below. This call here actually uses the data that was loaded from the files to generate the average series data.

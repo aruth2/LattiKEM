@@ -6,8 +6,8 @@
 
 
 
-#define optics_llimit 1.0
-#define optics_ulimit 2.5
+#define optics_llimit 1.4
+#define optics_ulimit 2.9
 typedef struct OptoelectronicState{
 	
     double *energystates;
@@ -24,6 +24,8 @@ typedef struct OptoelectronicState{
 	int *BGcoord;
 	//Additional network which has been collapsed.
 	crystalnetwork *bandgapNetwork;
+	int *BGUpdateList;
+	int numBGUpdate;
 	
 	int *IAcoord;
 	crystalnetwork *IANetwork;
@@ -53,7 +55,7 @@ double bg_energy(Configuration *config);
 
 void bg_setup(double newbandgapFunction(int numBandgapAlteringElements, int *numEachElement),char *newcoordElement,
 char *newbandgapAlteringElements,int newnumBandgapAlteringElements,int *coordinationShells,int newnumStates,
-char *newrepulsiveElements,int newnumRepulsiveElements, double *newrepulsiveEnergies,
+char *newrepulsiveElements,int newnumRepulsiveElements, double **newrepulsiveEnergies,
 void traj_generator(Trajectory *traj));
 
 void bg_registerSettings();
@@ -62,7 +64,7 @@ void OS_combineWeighted(Configuration *configs, int numCombine, Configuration *o
 void OS_printCoord(OptoelectronicState *OS);
 double interatomic_energy(Configuration *config);
 void bg_networkSwap(Configuration *config, int atom1, int atom2);
-void bg_coordSwap(crystal *crys, crystalnetwork *cn, int *coord, int atom1, int atom2, int forward_reverse);
+void bg_coordSwap(crystal *crys, crystalnetwork *cn, int *coord, int atom1, int atom2, int forward_reverse, int *BGUpdateList, int *numBGUpdate);
 void bg_partialSwap(Configuration *config, int atom1, int atom2, int forward_reverse);
 double getFermiConvergence();
 #endif

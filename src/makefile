@@ -7,12 +7,14 @@ DEPS        = ${INC_DIR}/crystal.h ${INC_DIR}/crystalnetwork.h ${INC_DIR}/supp.h
 OBJS        = ${OBJ_DIR}/crystal.o ${OBJ_DIR}/crystalnetwork.o ${OBJ_DIR}/supp.o ${OBJ_DIR}/matrix.o ${OBJ_DIR}/perovskite.o ${OBJ_DIR}/pkmc.o ${OBJ_DIR}/latticedynamics.o ${OBJ_DIR}/lattikem.o ${OBJ_DIR}/settings.o ${OBJ_DIR}/sourcecontrol.o
 MH_OBJS     = ${OBJS} ${BG_DIR}/mixedhalide.o ${BG_DIR}/bandgap.o
 MH_GPU_OBJS = ${MH_OBJS} ${BG_DIR}/bandgap_GPU.o
+TH_OBJS     = ${OBJS} ${BG_DIR}/triplehalide.o ${BG_DIR}/bandgap.o
+TH_GPU_OBJS = ${TH_OBJS} ${BG_DIR}/bandgap_GPU.o
 MCH_OBJS    = ${OBJS} ${BG_DIR}/mixedcationhalide.o ${BG_DIR}/bandgap.o
 all_OBJS    = ${MH_OBJS} ${MH_GPU_OBJS} ${MCH_OBJS}
 
 $(info Compiling Lattikem target $(MAKECMDGOALS)!)
 
-ifeq ($(MAKECMDGOALS),mixedhalide_GPU)
+ifeq ($(MAKECMDGOALS),$(filter $(MAKECMDGOALS),mixedhalide_GPU triplehalide_GPU))
 cc=nvcc
 else
 cc=gcc
@@ -49,6 +51,10 @@ mixedhalide: ${MH_OBJS}
 	-${cc} ${CFLAGS} -o ${OBJ_DIR}/mixedhalide ${MH_OBJS} ${ACCFLAGS} -lm -lpthread -lnuma
 	${RM} ${MH_OBJS}
 	
+triplehalide: ${TH_OBJS}
+	-${cc} ${CFLAGS} -o ${OBJ_DIR}/triplehalide ${TH_OBJS} ${ACCFLAGS} -lm -lpthread -lnuma
+	${RM} ${TH_OBJS}
+	
 mixedhalide_profile: ${MH_OBJS}
 	-${cc} ${CFLAGS} -o ${OBJ_DIR}/mixedhalide_profile ${MH_OBJS} ${ACCFLAGS} -lm -lpthread -lnuma
 	${RM} ${MH_OBJS}	
@@ -59,6 +65,10 @@ ${BG_DIR}/bandgap_GPU.o: ${BG_DIR}/bandgap_GPU.cu
 mixedhalide_GPU: ${MH_GPU_OBJS}
 	-${cc} ${CUDAFLAGS} -o ${OBJ_DIR}/mixedhalide_GPU ${MH_GPU_OBJS} -lm -lpthread -lnuma
 	${RM} ${MH_GPU_OBJS}
+	
+triplehalide_GPU: ${TH_GPU_OBJS}
+	-${cc} ${CUDAFLAGS} -o ${OBJ_DIR}/triplehalide_GPU ${TH_GPU_OBJS} -lm -lpthread -lnuma
+	${RM} ${TH_GPU_OBJS}
 
 mixedcationhalide: ${MCH_OBJS}
 	-${cc} -o ${OBJ_DIR}/mixedcationhalide ${MCH_OBJS} -lm -lpthread

@@ -50,6 +50,8 @@ int core_number(int threadnumber)
 
 int bind_thread_to_core(int threadnumber) {
    
+   if(threadnumber == -1)
+   return 2;
    int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
    int core_id = core_number(threadnumber);
    if (core_id < 0 || core_id >= num_cores)
